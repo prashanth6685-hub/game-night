@@ -332,3 +332,29 @@
   cursor: pointer;
   color: var(--muted);
 }
+
+/* Config dialog (opened from START): stacked option groups. */
+.ch-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ch-dialog .ch-segmented {
+  margin-bottom: 8px;
+}
+
+.ch-dialog .ch-teams-list {
+  margin: 2px 0 8px;
+}
+
+.ch-gen-error {
+  margin: 4px 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  font-weight: 600;
+  font-size: 0.9rem;
+}

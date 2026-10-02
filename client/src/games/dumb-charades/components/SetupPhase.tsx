@@ -1,165 +1,126 @@
-// Setup phase: pick category, language, difficulty and timer length.
-import { useMemo, useState } from 'react';
+// Setup phase: type any custom category, hit START, then configure the game
+// (language, difficulty, timer, rounds, teams) in a dialog. Words are
+// AI-generated per session — no preset categories.
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
-import { Button, Card, Spinner, useToast } from '../../../shared/ui/index.ts';
+import {
+  Button,
+  Card,
+  Modal,
+  Spinner,
+  useToast,
+} from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import { PACKS, CATEGORIES, LANGUAGES } from '../data/index.ts';
-import { buildPool } from '../logic/pool.ts';
 import { generateCustomWords } from '../logic/customCategory.ts';
-import type {
-  CharadesCategory,
-  CharadesDifficulty,
-  CharadesLang,
-} from '../data/types.ts';
-import type { CharadesSetup } from './GameScreen.tsx';
+import type { CharadesDifficulty, CharadesLang } from '../data/types.ts';
+import type { CharadesSetup, CharadesTeams } from './GameScreen.tsx';
 
 interface SetupPhaseProps {
   onStart: (setup: CharadesSetup) => void;
 }
 
 const TIMER_OPTIONS = [30, 60, 90, 120];
+const ROUND_OPTIONS: (number | null)[] = [5, 10, null];
 
-const DIFFICULTIES: { id: CharadesDifficulty | 'all'; labelKey: string }[] = [
-  { id: 'all', labelKey: 'charades.all' },
+const DIFFICULTIES: { id: CharadesDifficulty; labelKey: string }[] = [
   { id: 'easy', labelKey: 'charades.easy' },
   { id: 'medium', labelKey: 'charades.medium' },
   { id: 'hard', labelKey: 'charades.hard' },
   { id: 'veryhard', labelKey: 'charades.veryHard' },
 ];
 
-function prettify(id: string): string {
-  return id
-    .replace(/[-_]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+const LANGS: { id: CharadesLang; label: string }[] = [
+  { id: 'en', label: 'English' },
+  { id: 'te', label: 'తెలుగు' },
+  { id: 'hi', label: 'हिन्दी' },
+];
+
+const TEAM_LETTERS = ['A', 'B', 'C', 'D'];
+const TEAM_COLORS = ['#4f46e5', '#16a34a', '#f59e0b', '#dc2626'];
 
 export default function SetupPhase({ onStart }: SetupPhaseProps) {
   const { t } = useI18n();
   const { toast } = useToast();
 
-  const [category, setCategory] = useState<CharadesCategory | 'random'>(
-    'random',
-  );
-  const [difficulty, setDifficulty] = useState<CharadesDifficulty | 'all'>(
-    'all',
-  );
-  const [timerSecs, setTimerSecs] = useState<number>(60);
-
-  // AI custom category: free-text search → server generates fresh words.
   const [customText, setCustomText] = useState<string>('');
+  const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+
+  // Dialog config state.
+  const [language, setLanguage] = useState<CharadesLang>('en');
+  const [difficulty, setDifficulty] =
+    useState<CharadesDifficulty>('medium');
+  const [timerSecs, setTimerSecs] = useState<number>(60);
+  const [rounds, setRounds] = useState<number | null>(5);
+  const [teamCount, setTeamCount] = useState<number>(2);
+  const [teamNames, setTeamNames] = useState<string[]>(['', '', '', '']);
+
   const [generating, setGenerating] = useState<boolean>(false);
-  const [customResult, setCustomResult] = useState<{
-    category: string;
-    words: string[];
-  } | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
 
-  const clearCustom = (): void => setCustomResult(null);
+  const defaultTeamName = (i: number): string =>
+    `${t('charades.team')} ${TEAM_LETTERS[i] ?? String(i + 1)}`;
 
-  // LANGUAGES may be plain ids ('en') or { id, label } objects — accept both,
-  // falling back to the languages actually present in PACKS.
-  const langOpts = useMemo((): { id: string; label: string }[] => {
-    const ids: string[] = [];
-    const labels = new Map<string, string>();
-    const raw: unknown = LANGUAGES;
-    if (Array.isArray(raw)) {
-      for (const entry of raw) {
-        if (typeof entry === 'string') {
-          ids.push(entry);
-        } else if (entry !== null && typeof entry === 'object' && 'id' in entry) {
-          const id = (entry as { id: unknown }).id;
-          if (typeof id === 'string') {
-            ids.push(id);
-            const label = (entry as { label: unknown }).label;
-            if (typeof label === 'string') labels.set(id, label);
-          }
-        }
-      }
-    }
-    if (ids.length === 0) {
-      for (const pack of PACKS) {
-        if (!ids.includes(pack.language)) ids.push(pack.language);
-      }
-    }
-    return ids.map((id) => {
-      const fromData = labels.get(id);
-      if (fromData) return { id, label: fromData };
-      const key = `charades.lang.${id}`;
-      const label = t(key);
-      return { id, label: label === key ? prettify(id) : label };
-    });
-  }, [t]);
-
-  const [language, setLanguage] = useState<string>(
-    () => langOpts[0]?.id ?? 'en',
-  );
-
-  const catLabel = (id: string): string => {
-    if (id === 'random') return t('charades.random');
-    const key = `charades.cat.${id}`;
-    const label = t(key);
-    return label === key ? prettify(id) : label;
+  const setTeamName = (i: number, value: string): void => {
+    setTeamNames((prev) => prev.map((n, j) => (j === i ? value : n)));
   };
 
-  const handleStart = (): void => {
+  const openDialog = (): void => {
+    if (customText.trim().length < 2 || generating) return;
     playSound('click');
-    if (customResult) {
-      track('custom_category_generated', {
-        category: customResult.category,
-        words: customResult.words.length,
-      });
-      onStart({
-        language: language as CharadesLang,
-        category,
-        difficulty,
-        timerSecs,
-        customCategory: customResult.category,
-        customWords: customResult.words,
-      });
-      return;
-    }
-    const pool = buildPool(PACKS, {
-      language: language as CharadesLang,
-      category,
-      difficulty,
-    });
-    if (pool.length === 0) {
-      toast(t('charades.noWords'));
-      return;
-    }
-    track('category_selected', { category: category as string });
-    track('language_selected', { language });
-    onStart({
-      language: language as CharadesLang,
-      category,
-      difficulty,
-      timerSecs,
-    });
+    setGenError(null);
+    setDialogOpen(true);
   };
 
-  const handleGenerate = async (): Promise<void> => {
+  const handleConfirm = async (): Promise<void> => {
     const category = customText.trim();
     if (category.length < 2 || generating) return;
     playSound('click');
     setGenerating(true);
+    setGenError(null);
     try {
       const result = await generateCustomWords({
         category,
-        language: language as CharadesLang,
+        language,
         difficulty,
       });
-      setCustomResult(result);
+      const rawNames = teamNames
+        .slice(0, teamCount)
+        .map((n, i) => n.trim() || defaultTeamName(i));
+      const seen = new Set<string>();
+      const names = rawNames.map((n) => {
+        let name = n;
+        let k = 2;
+        while (seen.has(name)) {
+          name = `${n} ${k}`;
+          k += 1;
+        }
+        seen.add(name);
+        return name;
+      });
+      const teams: CharadesTeams = { names, rounds };
       track('custom_category_generated', {
         category: result.category,
         words: result.words.length,
       });
+      track('game_started', { game: 'dumb-charades' });
+      setDialogOpen(false);
+      onStart({
+        language,
+        customCategory: result.category,
+        customWords: result.words,
+        difficulty,
+        timerSecs,
+        teams,
+      });
     } catch (err) {
-      toast(
+      const msg =
         err instanceof Error && err.message
           ? err.message
-          : t('charades.generationFailed'),
-      );
+          : t('charades.generationFailed');
+      setGenError(msg);
+      toast(msg);
     } finally {
       setGenerating(false);
     }
@@ -187,9 +148,7 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
 
   return (
     <div className="ch-screen">
-      <h1 className="ch-title">
-        🎭 {t('charades.setupTitle')}
-      </h1>
+      <h1 className="ch-title">🎭 {t('charades.setupTitle')}</h1>
 
       <Card>
         <span className="ch-section-label">{t('charades.customCategory')}</span>
@@ -203,111 +162,120 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
             aria-label={t('charades.customCategory')}
             onChange={(e) => setCustomText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') void handleGenerate();
+              if (e.key === 'Enter') openDialog();
             }}
           />
-          <Button
-            onClick={() => void handleGenerate()}
-            disabled={generating || customText.trim().length < 2}
-          >
-            ✨ {t('charades.generate')}
-          </Button>
-        </div>
-        {generating ? (
-          <div className="ch-generating" role="status">
-            <Spinner />
-            <span>{t('charades.generating')}</span>
-          </div>
-        ) : null}
-        {customResult && !generating ? (
-          <div className="ch-custom-chip">
-            <span>
-              ✨ “{customResult.category}” · {customResult.words.length}{' '}
-              {t('charades.words')}
-            </span>
-            <button
-              type="button"
-              className="ch-custom-clear"
-              aria-label={t('common.cancel')}
-              onClick={() => {
-                playSound('click');
-                clearCustom();
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        ) : null}
-      </Card>
-
-      <Card>
-        <span className="ch-section-label">{t('charades.category')}</span>
-        <div className="ch-catgrid">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.id as string}
-              type="button"
-              className="ch-cat"
-              aria-pressed={category === c.id}
-              onClick={() => {
-                playSound('click');
-                clearCustom();
-                setCategory(c.id);
-              }}
-            >
-              <span className="ch-cat-icon">{c.icon}</span>
-              <span>{catLabel(c.id as string)}</span>
-            </button>
-          ))}
         </div>
       </Card>
 
-
-      <Card>
-        <span className="ch-section-label">{t('charades.language')}</span>
-        <div className="ch-segmented">
-          {langOpts.map((l) =>
-            seg(
-              language === l.id,
-              () => setLanguage(l.id),
-              l.label,
-              l.id,
-            ),
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <span className="ch-section-label">{t('charades.difficulty')}</span>
-        <div className="ch-segmented">
-          {DIFFICULTIES.map((d) =>
-            seg(
-              difficulty === d.id,
-              () => setDifficulty(d.id),
-              t(d.labelKey),
-              d.id as string,
-            ),
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <span className="ch-section-label">{t('charades.timer')}</span>
-        <div className="ch-segmented">
-          {TIMER_OPTIONS.map((s) =>
-            seg(
-              timerSecs === s,
-              () => setTimerSecs(s),
-              `${s}${t('charades.seconds')}`,
-              String(s),
-            ),
-          )}
-        </div>
-      </Card>
-
-      <Button size="lg" fullWidth onClick={handleStart}>
+      <Button
+        size="lg"
+        fullWidth
+        onClick={openDialog}
+        disabled={customText.trim().length < 2}
+      >
         {t('charades.startGame')}
       </Button>
+
+      <Modal
+        open={dialogOpen}
+        onClose={() => {
+          if (!generating) setDialogOpen(false);
+        }}
+        title={`✨ “${customText.trim()}”`}
+      >
+        <div className="ch-dialog">
+          <span className="ch-section-label">{t('charades.language')}</span>
+          <div className="ch-segmented">
+            {LANGS.map((l) =>
+              seg(language === l.id, () => setLanguage(l.id), l.label, l.id),
+            )}
+          </div>
+
+          <span className="ch-section-label">{t('charades.difficulty')}</span>
+          <div className="ch-segmented">
+            {DIFFICULTIES.map((d) =>
+              seg(
+                difficulty === d.id,
+                () => setDifficulty(d.id),
+                t(d.labelKey),
+                d.id,
+              ),
+            )}
+          </div>
+
+          <span className="ch-section-label">{t('charades.timer')}</span>
+          <div className="ch-segmented">
+            {TIMER_OPTIONS.map((s) =>
+              seg(
+                timerSecs === s,
+                () => setTimerSecs(s),
+                `${s}${t('charades.seconds')}`,
+                String(s),
+              ),
+            )}
+          </div>
+
+          <span className="ch-section-label">{t('charades.rounds')}</span>
+          <div className="ch-segmented">
+            {ROUND_OPTIONS.map((r) =>
+              seg(
+                rounds === r,
+                () => setRounds(r),
+                r === null ? t('charades.unlimited') : String(r),
+                r === null ? 'rinf' : `r${r}`,
+              ),
+            )}
+          </div>
+
+          <span className="ch-section-label">{t('charades.teamCount')}</span>
+          <div className="ch-segmented">
+            {[2, 3, 4].map((n) =>
+              seg(teamCount === n, () => setTeamCount(n), String(n), `t${n}`),
+            )}
+          </div>
+
+          <div className="ch-teams-list">
+            {Array.from({ length: teamCount }, (_, i) => (
+              <div className="ch-team-row" key={i}>
+                <span
+                  className="ch-team-dot"
+                  style={{ background: TEAM_COLORS[i % TEAM_COLORS.length] }}
+                />
+                <input
+                  value={teamNames[i] ?? ''}
+                  placeholder={defaultTeamName(i)}
+                  aria-label={`${t('charades.teamName')} ${i + 1}`}
+                  maxLength={24}
+                  onChange={(e) => setTeamName(i, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+
+          {genError ? (
+            <div className="ch-gen-error" role="alert">
+              {genError}
+            </div>
+          ) : null}
+
+          <Button
+            size="lg"
+            fullWidth
+            onClick={() => void handleConfirm()}
+            disabled={generating}
+          >
+            {generating ? (
+              <span className="ch-generating" role="status">
+                <Spinner />
+                <span>{t('charades.generating')}</span>
+              </span>
+            ) : (
+              t('charades.startGame')
+            )}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

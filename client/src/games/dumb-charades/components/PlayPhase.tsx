@@ -11,8 +11,6 @@ import {
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import { PACKS } from '../data/index.ts';
-import { buildPool } from '../logic/pool.ts';
 import { createDeck } from '../logic/deck.ts';
 import type { Deck } from '../logic/deck.ts';
 import {
@@ -40,25 +38,14 @@ export default function PlayPhase({ setup, teams, onFinish }: PlayPhaseProps) {
   const { t } = useI18n();
 
   // The deck lives in a ref: created once per game, never rebuilt by renders.
-  // A custom AI-generated word list takes precedence over the preset packs.
+  // Words are always AI-generated for the custom category (setup.customWords).
   const deckRef = useRef<Deck | null>(null);
   if (deckRef.current === null) {
-    const customItems: CharadesItem[] =
-      setup.customWords && setup.customWords.length > 0
-        ? setup.customWords.map((name) => ({
-            name,
-            difficulty: 'medium' as CharadesDifficulty,
-          }))
-        : [];
-    deckRef.current = createDeck(
-      customItems.length > 0
-        ? customItems
-        : buildPool(PACKS, {
-            language: setup.language,
-            category: setup.category,
-            difficulty: setup.difficulty,
-          }),
-    );
+    const items: CharadesItem[] = setup.customWords.map((name) => ({
+      name,
+      difficulty: setup.difficulty,
+    }));
+    deckRef.current = createDeck(items);
   }
 
   const teamCount = teams.names.length;
