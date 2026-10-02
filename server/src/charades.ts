@@ -225,12 +225,18 @@ async function attemptGet(
  * Google Gemini (free tier) — used when GEMINI_API_KEY is set.
  * Reliable primary; the key stays server-side (x-goog-api-key header).
  */
+export interface GeminiAttempt {
+  words: string[];
+  /** True when the API rejected the key (400/403) — the key needs attention. */
+  authRejected: boolean;
+}
+
 async function attemptGemini(
   fetchImpl: FetchLike,
   prompt: string,
   apiKey: string,
   signal: AbortSignal,
-): Promise<string[]> {
+): Promise<GeminiAttempt> {
   try {
     const res = await fetchImpl(GEMINI_URL, {
       method: 'POST',
@@ -244,7 +250,13 @@ async function attemptGemini(
       }),
       signal,
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      const rejected = res.status === 400 || res.status === 403;
+      console.error(
+        `[charades] gemini status=${res.status}${rejected ? ' (key rejected)' : ''}`,
+      );
+      return { words: [], authRejected: rejected };
+    }
     const data = JSON.parse(await res.text()) as {
       candidates?: { content?: { parts?: { text?: string }[] } }[];
     };
@@ -252,9 +264,12 @@ async function attemptGemini(
       data.candidates?.[0]?.content?.parts
         ?.map((p) => p.text ?? '')
         .join('') ?? '';
-    return sanitizeWords(text);
-  } catch {
-    return [];
+    return { words: sanitizeWords(text), authRejected: false };
+  } catch (err) {
+    console.error(
+      `[charades] gemini error: ${err instanceof Error ? err.name : 'unknown'}`,
+    );
+    return { words: [], authRejected: false };
   }
 }
 
@@ -304,23 +319,32 @@ async function attemptWithRetry(
  * Provider order: Gemini (if GEMINI_API_KEY is set — reliable free tier),
  * then Pollinations POST (with one retry), then Pollinations GET (with one retry).
  */
+export interface GenerateResult {
+  words: string[];
+  /** True when a configured Gemini key was rejected by Google. */
+  geminiRejected: boolean;
+}
+
 export async function generateWords(
   input: GenerateInput,
   fetchImpl: FetchLike = fetch as unknown as FetchLike,
-): Promise<string[]> {
+): Promise<GenerateResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
   try {
     const prompt = buildPrompt(input);
     const geminiKey = (process.env.GEMINI_API_KEY ?? '').trim();
+    let geminiRejected = false;
     if (geminiKey) {
-      const words = await attemptGemini(
+      const attempt = await attemptGemini(
         fetchImpl,
         prompt,
         geminiKey,
         controller.signal,
       );
-      if (words.length > 0) return words;
+      if (attempt.words.length > 0)
+        return { words: attempt.words, geminiRejected: false };
+      geminiRejected = attempt.authRejected;
       // Gemini failed — fall through to the free fallback below.
     }
     let words = await attemptWithRetry(
@@ -337,9 +361,9 @@ export async function generateWords(
         controller.signal,
       );
     }
-    return words;
+    return { words, geminiRejected };
   } catch {
-    return [];
+    return { words: [], geminiRejected: false };
   } finally {
     clearTimeout(timer);
   }
@@ -368,10 +392,13 @@ export function charadesGenerateHandler(deps: CharadesDeps = {}) {
         res.status(400).json({ error: parsed.error });
         return;
       }
-      const words = await generateWords(parsed.value, deps.fetchImpl);
+      const result = await generateWords(parsed.value, deps.fetchImpl);
+      const words = result.words;
       if (words.length === 0) {
         res.status(503).json({
-          error: 'The word service is busy — please try again in a moment.',
+          error: result.geminiRejected
+            ? 'The Gemini API key was rejected by Google — please check the key value and its restrictions in the Render dashboard.'
+            : 'The word service is busy — please try again in a moment.',
         });
         return;
       }

@@ -173,7 +173,7 @@ function mockFetch(responseText: string, ok = true): FetchLike {
 }
 
 test('generateWords returns the sanitized list on success', async () => {
-  const words = await generateWords(
+  const { words } = await generateWords(
     baseInput,
     mockFetch('["Alpha", "alpha", "Beta"]'),
   );
@@ -182,17 +182,17 @@ test('generateWords returns the sanitized list on success', async () => {
 
 test('generateWords returns [] when the LLM call fails', async () => {
   assert.deepEqual(
-    await generateWords(baseInput, mockFetch('boom', false)),
+    (await generateWords(baseInput, mockFetch('boom', false))).words,
     [],
   );
   assert.deepEqual(
-    await generateWords(baseInput, mockFetch('not json {{{')),
+    (await generateWords(baseInput, mockFetch('not json {{{'))).words,
     [],
   );
   const throwing: FetchLike = async () => {
     throw new Error('network down');
   };
-  assert.deepEqual(await generateWords(baseInput, throwing), []);
+  assert.deepEqual((await generateWords(baseInput, throwing)).words, []);
 });
 
 test('generateWords posts a JSON body with messages and model', async () => {
@@ -203,7 +203,7 @@ test('generateWords posts a JSON body with messages and model', async () => {
     seenBody = init?.body ?? '';
     return { ok: true, status: 200, text: async () => '["x"]' };
   };
-  await generateWords(baseInput, spy);
+  (await generateWords(baseInput, spy)).words;
   assert.equal(seenUrl, 'https://text.pollinations.ai/');
   const body = JSON.parse(seenBody) as {
     model: string;
@@ -221,7 +221,7 @@ test('generateWords falls back to GET when POST fails', async () => {
     if (init?.method === 'POST') return { ok: false, status: 500, text: async () => '' };
     return { ok: true, status: 200, text: async () => '["Alpha", "Beta"]' };
   };
-  const words = await generateWords(baseInput, fetch);
+  const { words } = await generateWords(baseInput, fetch);
   assert.deepEqual(words, ['Alpha', 'Beta']);
   // POST is retried once before falling back to GET.
   assert.equal(calls.length, 3);
@@ -238,7 +238,7 @@ test('generateWords falls back to GET when POST throws', async () => {
     if (n === 1) throw new Error('network down');
     return { ok: true, status: 200, text: async () => '["Gamma"]' };
   };
-  assert.deepEqual(await generateWords(baseInput, fetch), ['Gamma']);
+  assert.deepEqual((await generateWords(baseInput, fetch)).words, ['Gamma']);
   assert.equal(n, 2);
 });
 
@@ -248,7 +248,7 @@ test('generateWords returns [] when both POST and GET fail', async () => {
     n += 1;
     return { ok: false, status: 500, text: async () => '' };
   };
-  assert.deepEqual(await generateWords(baseInput, fetch), []);
+  assert.deepEqual((await generateWords(baseInput, fetch)).words, []);
   // POST retried once, then GET retried once.
   assert.equal(n, 4);
 });
@@ -271,15 +271,34 @@ test('generateWords uses Gemini when GEMINI_API_KEY is set', async () => {
           }),
       };
     };
-    const words = await generateWords(baseInput, fetch);
+    const { words } = await generateWords(baseInput, fetch);
     assert.deepEqual(words, ['Alpha', 'Beta']);
     assert.equal(calls.length, 1);
     assert.match(calls[0]?.url ?? '', /generativelanguage\.googleapis\.com/);
-    assert.equal(calls[0]?.headers?.['x-goog-api-key'], 'test-key-123');
+    assert.equal(calls[0]?.headers?.['x-goog-api-key'], process.env.GEMINI_API_KEY);
     assert.match(calls[0]?.body ?? '', /cricketers/);
   } finally {
     if (prev === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = prev;
+  }
+});
+
+test('generateWords reports geminiRejected when Google rejects the key', async () => {
+  const prev = process.env.GEMINI_API_KEY;
+process.env.GEMINI_API_KEY='dummy';
+  try {
+    const fetch: FetchLike = async (url) => {
+      if (url.includes('googleapis.com')) {
+        return { ok: false, status: 403, text: async () => 'key rejected' };
+      }
+      return { ok: false, status: 500, text: async () => '' };
+    };
+    const result = await generateWords(baseInput, fetch);
+    assert.deepEqual(result.words, []);
+    assert.equal(result.geminiRejected, true);
+  } finally {
+    if (prev === undefined) delete process.env.GEMINI_API_KEY;
+else process.env.GEMINI_API_KEY='dummy';
   }
 });
 
@@ -295,7 +314,7 @@ test('generateWords falls back to Pollinations when Gemini fails', async () => {
       }
       return { ok: true, status: 200, text: async () => '["Fallback"]' };
     };
-    assert.deepEqual(await generateWords(baseInput, fetch), ['Fallback']);
+    assert.deepEqual((await generateWords(baseInput, fetch)).words, ['Fallback']);
     assert.ok(urls[0]?.includes('googleapis.com'));
     assert.ok(urls[1]?.includes('pollinations.ai'));
   } finally {
