@@ -235,6 +235,10 @@ export interface GeminiAttempt {
   words: string[];
   /** True when the API rejected the key (400/403) — the key needs attention. */
   authRejected: boolean;
+  /** Last HTTP status from Google, or null when the request never completed. */
+  lastStatus: number | null;
+  /** True when the request failed before getting an HTTP response. */
+  networkFailed: boolean;
 }
 
 async function attemptGemini(
@@ -243,6 +247,14 @@ async function attemptGemini(
   apiKey: string,
   signal: AbortSignal,
 ): Promise<GeminiAttempt> {
+  const empty: GeminiAttempt = {
+    words: [],
+    authRejected: false,
+    lastStatus: null,
+    networkFailed: false,
+  };
+  let lastStatus: number | null = null;
+  let networkFailed = false;
   for (const model of GEMINI_MODELS) {
     if (signal.aborted) break;
     const url = `${GEMINI_URL_BASE}/${model}:generateContent`;
@@ -259,13 +271,16 @@ async function attemptGemini(
         }),
         signal,
       });
+      lastStatus = res.status;
+      networkFailed = false;
       if (!res.ok) {
         const rejected = res.status === 400 || res.status === 403;
         console.error(
           `[charades] gemini model=${model} status=${res.status}${rejected ? ' (key rejected)' : ''}`,
         );
         // A rejected key won't work on any model — stop immediately.
-        if (rejected) return { words: [], authRejected: true };
+        if (rejected)
+          return { words: [], authRejected: true, lastStatus, networkFailed };
         continue;
       }
       const data = JSON.parse(await res.text()) as {
@@ -276,15 +291,17 @@ async function attemptGemini(
           ?.map((p) => p.text ?? '')
           .join('') ?? '';
       const words = sanitizeWords(text);
-      if (words.length > 0) return { words, authRejected: false };
+      if (words.length > 0)
+        return { words, authRejected: false, lastStatus, networkFailed };
       // Model answered but produced nothing usable — try the next model.
     } catch (err) {
+      networkFailed = true;
       console.error(
         `[charades] gemini model=${model} error: ${err instanceof Error ? err.name : 'unknown'}`,
       );
     }
   }
-  return { words: [], authRejected: false };
+  return { ...empty, lastStatus, networkFailed };
 }
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
@@ -337,6 +354,10 @@ export interface GenerateResult {
   words: string[];
   /** True when a configured Gemini key was rejected by Google. */
   geminiRejected: boolean;
+  /** Last HTTP status from Google, if any. */
+  geminiStatus: number | null;
+  /** True when Google could not be reached at all. */
+  geminiUnreachable: boolean;
 }
 
 export async function generateWords(
@@ -349,6 +370,8 @@ export async function generateWords(
     const prompt = buildPrompt(input);
     const geminiKey = (process.env.GEMINI_API_KEY ?? '').trim();
     let geminiRejected = false;
+    let geminiStatus: number | null = null;
+    let geminiUnreachable = false;
     if (geminiKey) {
       const attempt = await attemptGemini(
         fetchImpl,
@@ -357,8 +380,15 @@ export async function generateWords(
         controller.signal,
       );
       if (attempt.words.length > 0)
-        return { words: attempt.words, geminiRejected: false };
+        return {
+          words: attempt.words,
+          geminiRejected: false,
+          geminiStatus: attempt.lastStatus,
+          geminiUnreachable: false,
+        };
       geminiRejected = attempt.authRejected;
+      geminiStatus = attempt.lastStatus;
+      geminiUnreachable = attempt.networkFailed;
       // Gemini failed — fall through to the free fallback below.
     }
     let words = await attemptWithRetry(
@@ -375,9 +405,14 @@ export async function generateWords(
         controller.signal,
       );
     }
-    return { words, geminiRejected };
+    return { words, geminiRejected, geminiStatus, geminiUnreachable };
   } catch {
-    return { words: [], geminiRejected: false };
+    return {
+      words: [],
+      geminiRejected: false,
+      geminiStatus: null,
+      geminiUnreachable: false,
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -409,10 +444,17 @@ export function charadesGenerateHandler(deps: CharadesDeps = {}) {
       const result = await generateWords(parsed.value, deps.fetchImpl);
       const words = result.words;
       if (words.length === 0) {
+        // Include the upstream diagnostic so the failure mode is visible.
+        const diag =
+          result.geminiStatus !== null
+            ? ` (google status ${result.geminiStatus})`
+            : result.geminiUnreachable
+              ? ' (google unreachable)'
+              : '';
         res.status(503).json({
           error: result.geminiRejected
             ? 'The Gemini API key was rejected by Google — please check the key value and its restrictions in the Render dashboard.'
-            : 'The word service is busy — please try again in a moment.',
+            : `The word service is busy — please try again in a moment.${diag}`,
         });
         return;
       }

@@ -407,9 +407,9 @@ test('handler returns 503 with the friendly message when generation fails', asyn
   const res = fakeRes();
   await handler(req, res);
   assert.equal(res.statusCode, 503);
-  assert.equal(
+  assert.match(
     (res.payload as { error: string }).error,
-    'The word service is busy \u2014 please try again in a moment.',
+    /^The word service is busy /,
   );
 });
 
