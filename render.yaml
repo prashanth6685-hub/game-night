@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: game-night
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health

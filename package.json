@@ -1,0 +1,1 @@
+{"name":"multi-game-hub","private":true,"scripts":{"build":"npm run build --prefix client && npm run build --prefix server","build:client":"npm run build --prefix client","dev:client":"node client/scripts/dev.mjs","test":"bash scripts/run-tests.sh","typecheck":"npx tsc -p client/tsconfig.json --noEmit"},"version":"1.0.0","workspaces":[]}

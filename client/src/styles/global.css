@@ -1,0 +1,148 @@
+/* Game Night global styles — mobile-first, theme via [data-theme] on <html>. */
+:root {
+  --bg: #f4f5fb;
+  --surface: #ffffff;
+  --surface-2: #eef0f7;
+  --text: #171a26;
+  --muted: #6b7280;
+  --primary: #4f46e5;
+  --primary-ink: #ffffff;
+  --accent: #f59e0b;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --info: #0ea5e9;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --tap: 48px;
+  --shadow: 0 2px 12px rgba(23, 26, 38, 0.08);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+[data-theme="dark"] {
+  --bg: #0e1220;
+  --surface: #1a2133;
+  --surface-2: #232c44;
+  --text: #eef2fa;
+  --muted: #9aa3b8;
+  --primary: #818cf8;
+  --primary-ink: #10132a;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { touch-action: manipulation; cursor: pointer; }
+img { max-width: 100%; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.gh-app { min-height: 100dvh; display: flex; flex-direction: column; }
+.gh-main { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 12px 12px 88px; }
+.gh-topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface); border-bottom: 1px solid var(--surface-2);
+}
+.gh-topbar .gh-logo { font-size: 1.5rem; }
+.gh-topbar .gh-name { font-weight: 800; font-size: 1.1rem; flex: 1; }
+.gh-iconbtn {
+  min-width: var(--tap); min-height: var(--tap);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface-2); border: none; border-radius: var(--radius-sm);
+  font-size: 1.3rem;
+}
+.gh-bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; background: var(--surface); border-top: 1px solid var(--surface-2);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+}
+.gh-bottomnav a {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 4px; text-decoration: none; color: var(--muted);
+  font-size: 0.72rem; border-radius: var(--radius-sm); min-height: var(--tap);
+}
+.gh-bottomnav a.active { color: var(--primary); font-weight: 700; background: var(--surface-2); }
+.gh-bottomnav .ico { font-size: 1.35rem; }
+
+.gh-page-title { font-size: 1.5rem; font-weight: 800; margin: 8px 4px 4px; }
+.gh-page-sub { color: var(--muted); margin: 0 4px 16px; }
+.gh-grid { display: grid; gap: 12px; }
+.gh-row { display: flex; gap: 10px; align-items: center; }
+.gh-spacer { flex: 1; }
+.gh-mt { margin-top: 16px; }
+.gh-center { text-align: center; }
+
+/* Skip link for keyboard users */
+.gh-skip { position: absolute; left: -9999px; }
+.gh-skip:focus { left: 8px; top: 8px; z-index: 99; background: var(--primary); color: var(--primary-ink); padding: 12px; border-radius: var(--radius-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---- Game Night app components (lobby cards, rooms, settings, ads) ---- */
+.gn-gamecard { padding: 0; overflow: hidden; }
+.gn-gamecard-top { padding: 18px; }
+.gn-gamecard-icon { font-size: 3rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+.gn-gamecard-body { padding: 14px 16px 16px; }
+.gn-gamecard-body h2 { margin: 0 0 4px; font-size: 1.25rem; }
+.gn-gamecard-body p { margin: 0 0 12px; color: var(--muted); }
+.gn-players { color: var(--muted); font-size: .9rem; }
+.gn-comingsoon { text-align: center; color: var(--muted); font-size: 1.05rem; padding: 20px; }
+
+.gn-field { display: block; margin-bottom: 12px; }
+.gn-field > span { display: block; font-weight: 600; margin-bottom: 6px; font-size: .9rem; }
+.gn-field input, .gn-field select, .gh-row input, .gh-grid input, .gh-grid select {
+  width: 100%; min-height: var(--tap); padding: 10px 12px;
+  border: 2px solid var(--surface-2); border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.gh-row input { width: auto; flex: 1; }
+
+.gn-roomcode {
+  font-size: 2.2rem; font-weight: 800; letter-spacing: .25em; text-align: center;
+  background: var(--surface-2); border-radius: var(--radius-sm); padding: 12px;
+}
+.gn-playerrow { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.gn-playername { flex: 1; font-weight: 600; }
+.gn-hostbadge {
+  font-style: normal; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 8px; margin-left: 8px;
+}
+.gn-ready { font-size: .8rem; color: var(--muted); }
+.gn-ready.on { color: var(--success); font-weight: 700; }
+.gn-linkbtn {
+  min-width: var(--tap); min-height: var(--tap); border: none; background: none;
+  color: var(--danger); font-size: 1.1rem; border-radius: var(--radius-sm);
+}
+
+.gn-segmented { display: flex; background: var(--surface-2); border-radius: var(--radius-sm); padding: 4px; gap: 4px; }
+.gn-segmented button {
+  flex: 1; min-height: var(--tap); border: none; background: transparent;
+  border-radius: calc(var(--radius-sm) - 4px); font-weight: 600; color: var(--muted);
+}
+.gn-segmented button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.gn-toggle {
+  width: 60px; height: 34px; border-radius: 999px; border: none; position: relative;
+  background: var(--surface-2); transition: background .2s; flex-shrink: 0;
+}
+.gn-toggle.on { background: var(--success); }
+.gn-toggle-knob {
+  position: absolute; top: 3px; left: 3px; width: 28px; height: 28px; border-radius: 50%;
+  background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.gn-toggle.on .gn-toggle-knob { left: 29px; }
+
+.gn-adslot {
+  border: 2px dashed var(--muted); border-radius: var(--radius-sm);
+  min-height: 90px; display: flex; align-items: center; justify-content: center;
+  margin: 4px 0; opacity: .7;
+}
+.gn-adslot-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .15em; color: var(--muted); }

@@ -1,0 +1,297 @@
+/* Tambola game styles — mobile-first, theme via CSS vars from global.css. */
+
+.tm {
+  display: grid;
+  gap: 12px;
+}
+
+.tm-center { text-align: center; }
+.tm-muted { color: var(--muted); margin: 0; }
+
+.tm-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* ---- Caller ---- */
+
+.tm-current {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 8px;
+}
+
+.tm-current__num {
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.tm-current__waiting {
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+@keyframes tm-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.tm-pop { animation: tm-pop 0.35s ease-out; }
+
+.tm-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 10px;
+}
+
+.tm-prev {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tm-prev__label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tm-prev__chip {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-weight: 700;
+}
+
+.tm-count { font-size: 0.9rem; color: var(--muted); }
+.tm-count strong { color: var(--text); }
+
+.tm-actions { margin: 4px 0 10px; }
+
+.tm-autocall {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* ---- Number board (compact 10×9 grid) ---- */
+
+.tm-board {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+}
+
+.tm-board__cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+  user-select: none;
+}
+
+.tm-board__cell--called {
+  background: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 700;
+}
+
+/* ---- Tickets ---- */
+
+.tm-players { display: grid; gap: 8px; }
+
+.tm-player {
+  border: 1px solid var(--surface-2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.tm-player > summary {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--surface-2);
+  list-style: none;
+}
+
+.tm-player > summary::-webkit-details-marker { display: none; }
+.tm-player > summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--muted);
+}
+.tm-player[open] > summary::after { content: '▴'; }
+
+.tm-player__tickets {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.tm-ticket { display: grid; gap: 4px; }
+
+.tm-ticket__label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.tm-ticket__row {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 4px;
+}
+
+.tm-cell {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.tm-cell--empty {
+  background: transparent;
+  border: 1px dashed var(--surface-2);
+}
+
+.tm-cell--marked {
+  background: var(--success);
+  color: #fff;
+}
+
+.tm-cell--outline {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+
+/* ---- Setup & claim forms ---- */
+
+.tm-setup { display: grid; gap: 14px; }
+
+.tm-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tm-stepper__label { font-weight: 600; }
+
+.tm-stepper__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tm-stepper__btn {
+  width: var(--tap);
+  height: var(--tap);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tm-stepper__btn:disabled { opacity: 0.35; }
+
+.tm-stepper__value {
+  min-width: 2ch;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.tm-checklist { display: grid; gap: 2px; }
+
+.tm-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--tap);
+  padding: 4px 0;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.tm-check input {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--primary);
+}
+
+.tm-check--locked { opacity: 0.5; }
+
+.tm-select {
+  min-height: var(--tap);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-2);
+  background: var(--surface);
+  padding: 0 12px;
+}
+
+.tm-select--sm { min-height: 40px; }
+
+.tm-claim { display: grid; gap: 10px; }
+
+.tm-claim__label {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.tm-claim__sub { color: var(--muted); margin: 0; }
+
+.tm-valid { color: var(--success); font-weight: 700; margin: 4px 0; }
+.tm-invalid { color: var(--danger); font-weight: 700; margin: 4px 0; }
+
+/* ---- Claimed wins list ---- */
+
+.tm-claims {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.tm-claims__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
