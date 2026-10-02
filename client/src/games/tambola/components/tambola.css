@@ -491,3 +491,202 @@ button.tmq-cell:active {
 .tmq-pending {
   font-weight: 600;
 }
+
+/* ---- Player ticket: proper 3×9 table with a ticket-stub header ---- */
+
+.tmq-stub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 100%);
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.tmq-stub__icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.tmq-stub__title {
+  flex: 1;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
+.tmq-stub__code {
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.tmq-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 6px;
+  margin: 2px -3px;
+}
+
+.tmq-td {
+  padding: 0;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.12);
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.tmq-td--empty {
+  background: transparent;
+  border: 2px dashed var(--muted);
+  opacity: 0.35;
+  box-shadow: none;
+}
+
+.tmq-tbtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 58px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--primary-ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tmq-tbtn:active {
+  transform: scale(0.94);
+}
+
+.tmq-tbtn__num {
+  display: inline-block;
+  line-height: 1;
+}
+
+.tmq-tbtn__check {
+  position: absolute;
+  top: 3px;
+  right: 7px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Called: green gradient + white number + pop animation (icon AND color). */
+.tmq-td--called {
+  background: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+  border-color: #15803d;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.45);
+}
+
+.tmq-td--called .tmq-tbtn {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.tmq-td--called .tmq-tbtn__num {
+  animation: tmq-pop 0.28s ease-out;
+}
+
+@keyframes tmq-pop {
+  0% { transform: scale(0.5); }
+  55% { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+
+/* Dabbed: gold ring on top of whatever state the cell is in. */
+.tmq-td--dabbed {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.28);
+}
+
+/* Called-numbers progress bar (graphical). */
+.tmq-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.tmq-progress__track {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.tmq-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), #7c3aed);
+  transition: width 0.3s ease;
+}
+
+.tmq-progress__label {
+  font-size: 0.9rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* ---- Same-device ticket: proper 3×9 table ---- */
+
+.tm-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 5px;
+}
+
+.tm-table caption {
+  caption-side: top;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+.tm-td {
+  min-height: var(--tap);
+  height: 52px;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 2px solid var(--primary);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--primary-ink);
+}
+
+.tm-td--empty {
+  background: transparent;
+  border: 2px dashed var(--muted);
+  opacity: 0.35;
+}
+
+.tm-td--marked {
+  background: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+  border-color: #15803d;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.tm-td--outline {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}

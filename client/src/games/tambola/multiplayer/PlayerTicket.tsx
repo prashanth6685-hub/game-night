@@ -79,49 +79,88 @@ export function PlayerTicket({
         <p className="tm-muted">{t('tambola.dabHint')}</p>
       </Card>
 
-      <Card title={t('tambola.yourTicketLabel')}>
-        <div className="tm-ticket tmq-ticket" role="group" aria-label={t('tambola.yourTicketLabel')}>
-          {ticket.map((row, r) => (
-            <div className="tm-ticket__row" key={r}>
-              {row.map((v, c) => {
-                if (v === null) {
-                  return <div className="tm-cell tm-cell--empty" key={c} aria-hidden />;
-                }
-                const isCalled = called.has(v);
-                const isDabbed = dabbed.has(v);
-                const cls =
-                  'tm-cell tmq-cell' +
-                  (isCalled ? ' tmq-cell--called' : '') +
-                  (isDabbed ? ' tmq-cell--dabbed' : '');
-                const label = isDabbed
-                  ? t('tambola.cellDabbed').replace('{n}', String(v))
-                  : isCalled
-                    ? t('tambola.cellCalled').replace('{n}', String(v))
-                    : t('tambola.cellUncalled').replace('{n}', String(v));
-                return (
-                  <button
-                    type="button"
-                    key={c}
-                    className={cls}
-                    aria-pressed={isDabbed}
-                    aria-label={label}
-                    onClick={() => onToggle(v)}
-                  >
-                    {isCalled ? (
-                      <span className="tmq-cell__check" aria-hidden>
-                        ✓
-                      </span>
-                    ) : null}
-                    <span>{v}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
+      <Card>
+        <div className="tmq-stub" aria-hidden="true">
+          <span className="tmq-stub__icon">🎟</span>
+          <span className="tmq-stub__title">{t('tambola.yourTicketLabel')}</span>
+          <span className="tmq-stub__code">{code}</span>
         </div>
-        <div className="tmq-legend" aria-hidden>
-          <span className="tmq-legend__item tmq-legend__item--called">✓ {t('tambola.legendCalled')}</span>
-          <span className="tmq-legend__item tmq-legend__item--dabbed">◉ {t('tambola.legendDabbed')}</span>
+        <table className="tmq-table" aria-label={t('tambola.yourTicketLabel')}>
+          <tbody>
+            {ticket.map((row, r) => (
+              <tr key={r}>
+                {row.map((v, c) => {
+                  if (v === null) {
+                    return (
+                      <td
+                        key={c}
+                        className="tmq-td tmq-td--empty"
+                        aria-hidden="true"
+                      />
+                    );
+                  }
+                  const isCalled = called.has(v);
+                  const isDabbed = dabbed.has(v);
+                  const tdCls =
+                    'tmq-td' +
+                    (isCalled ? ' tmq-td--called' : '') +
+                    (isDabbed ? ' tmq-td--dabbed' : '');
+                  const label = isDabbed
+                    ? t('tambola.cellDabbed').replace('{n}', String(v))
+                    : isCalled
+                      ? t('tambola.cellCalled').replace('{n}', String(v))
+                      : t('tambola.cellUncalled').replace('{n}', String(v));
+                  return (
+                    <td key={c} className={tdCls}>
+                      <button
+                        type="button"
+                        className="tmq-tbtn"
+                        aria-pressed={isDabbed}
+                        aria-label={label}
+                        onClick={() => onToggle(v)}
+                      >
+                        {isCalled ? (
+                          <span className="tmq-tbtn__check" aria-hidden="true">
+                            ✓
+                          </span>
+                        ) : null}
+                        <span className="tmq-tbtn__num">{v}</span>
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div
+          className="tmq-progress"
+          role="progressbar"
+          aria-valuenow={calledCount}
+          aria-valuemin={0}
+          aria-valuemax={90}
+          aria-label={t('tambola.calledOfN').replace(
+            '{called}',
+            String(calledCount),
+          )}
+        >
+          <div className="tmq-progress__track">
+            <div
+              className="tmq-progress__fill"
+              style={{ width: `${Math.round((calledCount / 90) * 100)}%` }}
+            />
+          </div>
+          <div className="tmq-progress__label">
+            <strong>{calledCount}</strong> / 90
+          </div>
+        </div>
+        <div className="tmq-legend" aria-hidden="true">
+          <span className="tmq-legend__item tmq-legend__item--called">
+            ✓ {t('tambola.legendCalled')}
+          </span>
+          <span className="tmq-legend__item tmq-legend__item--dabbed">
+            ◉ {t('tambola.legendDabbed')}
+          </span>
         </div>
       </Card>
 

@@ -15,26 +15,30 @@ interface TicketCardProps {
 export function TicketCard({ ticket, called, outline, label }: TicketCardProps) {
   const outlineKeys = new Set((outline ?? []).map((c) => `${c.r},${c.c}`));
   return (
-    <div className="tm-ticket">
-      {label ? <div className="tm-ticket__label">{label}</div> : null}
-      {ticket.map((row, r) => (
-        <div className="tm-ticket__row" key={r}>
-          {row.map((v, c) => {
-            const marked = v !== null && called.has(v);
-            const outlined = outlineKeys.has(`${r},${c}`);
-            const cls =
-              'tm-cell' +
-              (v === null ? ' tm-cell--empty' : '') +
-              (marked ? ' tm-cell--marked' : '') +
-              (outlined ? ' tm-cell--outline' : '');
-            return (
-              <div className={cls} key={c}>
-                {v ?? ''}
-              </div>
-            );
-          })}
-        </div>
-      ))}
-    </div>
+    <table className="tm-table" aria-label={label ?? 'ticket'}>
+      <tbody>
+        {label ? (
+          <caption className="tm-ticket__label">{label}</caption>
+        ) : null}
+        {ticket.map((row, r) => (
+          <tr key={r}>
+            {row.map((v, c) => {
+              const marked = v !== null && called.has(v);
+              const outlined = outlineKeys.has(`${r},${c}`);
+              const cls =
+                'tm-td' +
+                (v === null ? ' tm-td--empty' : '') +
+                (marked ? ' tm-td--marked' : '') +
+                (outlined ? ' tm-td--outline' : '');
+              return (
+                <td key={c} className={cls}>
+                  {v ?? ''}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
