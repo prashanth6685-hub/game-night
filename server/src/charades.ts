@@ -173,9 +173,49 @@ export interface FetchLike {
   ): Promise<{ ok: boolean; text(): Promise<string> }>;
 }
 
+async function attemptPost(
+  fetchImpl: FetchLike,
+  prompt: string,
+  signal: AbortSignal,
+): Promise<string[]> {
+  try {
+    const res = await fetchImpl(POLLINATIONS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai',
+        messages: [{ role: 'user', content: prompt }],
+      }),
+      signal,
+    });
+    if (!res.ok) return [];
+    return sanitizeWords(await res.text());
+  } catch {
+    return [];
+  }
+}
+
+async function attemptGet(
+  fetchImpl: FetchLike,
+  prompt: string,
+  signal: AbortSignal,
+): Promise<string[]> {
+  try {
+    const res = await fetchImpl(POLLINATIONS_URL + encodeURIComponent(prompt), {
+      signal,
+    });
+    if (!res.ok) return [];
+    return sanitizeWords(await res.text());
+  } catch {
+    return [];
+  }
+}
+
 /**
  * Call the LLM and return sanitized words.
  * Never throws: any failure (timeout, network, bad response) → [].
+ * Tries POST first, then falls back to GET (different upstream code path —
+ * the free tier is flaky and one path may work while the other 500s).
  */
 export async function generateWords(
   input: GenerateInput,
@@ -184,17 +224,12 @@ export async function generateWords(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
   try {
-    const res = await fetchImpl(POLLINATIONS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'openai',
-        messages: [{ role: 'user', content: buildPrompt(input) }],
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) return [];
-    return sanitizeWords(await res.text());
+    const prompt = buildPrompt(input);
+    let words = await attemptPost(fetchImpl, prompt, controller.signal);
+    if (words.length === 0 && !controller.signal.aborted) {
+      words = await attemptGet(fetchImpl, prompt, controller.signal);
+    }
+    return words;
   } catch {
     return [];
   } finally {

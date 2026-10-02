@@ -213,6 +213,42 @@ test('generateWords posts a JSON body with messages and model', async () => {
   assert.match(body.messages[0]?.content ?? '', /cricketers/);
 });
 
+test('generateWords falls back to GET when POST fails', async () => {
+  const calls: { url: string; method?: string }[] = [];
+  const fetch: FetchLike = async (url, init) => {
+    calls.push({ url, method: init?.method });
+    if (init?.method === 'POST') return { ok: false, text: async () => '' };
+    return { ok: true, text: async () => '["Alpha", "Beta"]' };
+  };
+  const words = await generateWords(baseInput, fetch);
+  assert.deepEqual(words, ['Alpha', 'Beta']);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0]?.method, 'POST');
+  assert.match(calls[1]?.url ?? '', /^https:\/\/text\.pollinations\.ai\//);
+  assert.notEqual(calls[1]?.method, 'POST');
+});
+
+test('generateWords falls back to GET when POST throws', async () => {
+  let n = 0;
+  const fetch: FetchLike = async () => {
+    n += 1;
+    if (n === 1) throw new Error('network down');
+    return { ok: true, text: async () => '["Gamma"]' };
+  };
+  assert.deepEqual(await generateWords(baseInput, fetch), ['Gamma']);
+  assert.equal(n, 2);
+});
+
+test('generateWords returns [] when both POST and GET fail', async () => {
+  let n = 0;
+  const fetch: FetchLike = async () => {
+    n += 1;
+    return { ok: false, text: async () => '' };
+  };
+  assert.deepEqual(await generateWords(baseInput, fetch), []);
+  assert.equal(n, 2);
+});
+
 // ---------- express handler ----------
 
 class FakeRes {
