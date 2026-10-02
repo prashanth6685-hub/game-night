@@ -25,6 +25,22 @@
   min-height: 48px;
 }
 
+.chess-mode-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chess-mode-row > * {
+  flex: 1 1 auto;
+}
+
+.chess-mp-note {
+  margin: 0;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
 /* ---- Board ---- */
 
 .chess-board-wrap {

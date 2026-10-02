@@ -1,8 +1,8 @@
 // Snake & Ladder game state machine.
 // Pure — applyRoll never mutates its input; it returns a new state.
 // Tested in game.test.ts.
-import { applyMove } from './board.ts';
-import type { MoveEvent } from './board.ts';
+import { applyMove, boardSet } from './board.ts';
+import type { MoveEvent, SlDifficulty } from './board.ts';
 
 export interface SlPlayer {
   name: string;
@@ -18,6 +18,8 @@ export interface SlState {
   /** Index of the winning player, or null while the game is in progress. */
   winner: number | null;
   extraTurnOnSix: boolean;
+  /** Board layout (snakes/ladders density) for this game. */
+  difficulty: SlDifficulty;
 }
 
 const PALETTE: string[] = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
@@ -25,6 +27,7 @@ const PALETTE: string[] = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
 export function createGame(
   names: string[],
   extraTurnOnSix: boolean,
+  difficulty: SlDifficulty = 'medium',
 ): SlState {
   return {
     players: names.map((name, i) => ({
@@ -35,6 +38,7 @@ export function createGame(
     turn: 0,
     winner: null,
     extraTurnOnSix,
+    difficulty,
   };
 }
 
@@ -57,7 +61,7 @@ export function applyRoll(state: SlState, roll: number): RollResult {
   }
   const players = state.players.map((p) => ({ ...p }));
   const mover = players[moverIdx] as SlPlayer;
-  const move = applyMove(mover.pos, roll);
+  const move = applyMove(mover.pos, roll, boardSet(state.difficulty));
   mover.pos = move.pos;
 
   let winner = state.winner;
@@ -69,7 +73,13 @@ export function applyRoll(state: SlState, roll: number): RollResult {
     winner !== null || extraTurn ? moverIdx : (moverIdx + 1) % players.length;
 
   return {
-    state: { players, turn, winner, extraTurnOnSix: state.extraTurnOnSix },
+    state: {
+      players,
+      turn,
+      winner,
+      extraTurnOnSix: state.extraTurnOnSix,
+      difficulty: state.difficulty,
+    },
     event: move.event,
     extraTurn,
   };

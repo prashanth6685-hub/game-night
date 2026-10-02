@@ -7,15 +7,19 @@ import { Avatar, Button, Card, ConfirmDialog } from '../../../shared/ui/index.ts
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
 import {
-  LADDERS,
-  SNAKES,
+  applyMove,
+  boardSet,
   rollDice,
   squareToRowCol,
 } from '../logic/board.ts';
+import type { SlDifficulty } from '../logic/board.ts';
+import { BoardOverlay, squareCenterPct } from './BoardOverlay.tsx';
 import { applyRoll, createGame } from '../logic/game.ts';
 import type { SlPlayer, SlState } from '../logic/game.ts';
 import './snakeladder.css';
 import { randomExampleNames } from '../../../shared/names.ts';
+import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
+import { initialSlMpState } from '../multiplayer/MpGame.tsx';
 
 type Phase = 'setup' | 'play';
 
@@ -52,12 +56,20 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   const namePhs = useMemo(() => randomExampleNames(playerCount), [playerCount]);
   const [extraTurnOnSix, setExtraTurnOnSix] = useState(true);
   const [vsComputer, setVsComputer] = useState(false);
+  const [mpMode, setMpMode] = useState(false);
+  const [showMpLobby, setShowMpLobby] = useState(false);
   /** Bot names for seats 2-4 in vs-computer mode (stable for the setup screen). */
   const botNames = useMemo(() => randomExampleNames(3), []);
   /** Player indices that are computer-controlled in the running game. */
   const [botIdx, setBotIdx] = useState<Set<number>>(new Set());
 
   const [game, setGame] = useState<SlState | null>(null);
+  const [difficulty, setDifficulty] = useState<SlDifficulty>('medium');
+  const [anim, setAnim] = useState<{
+    idx: number;
+    square: number;
+    glide: boolean;
+  } | null>(null);
   const [dice, setDice] = useState(6);
   const [rolling, setRolling] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -101,7 +113,8 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       bots = new Set();
     }
     setBotIdx(bots);
-    setGame(createGame(resolved, extraTurnOnSix));
+    setGame(createGame(resolved, extraTurnOnSix, difficulty));
+    setAnim(null);
     setMessage(null);
     setHighlight(null);
     setDice(6);
@@ -152,45 +165,106 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       const { state: next, event, extraTurn } = applyRoll(g, roll);
       const moved = next.players[moverIdx];
       const finalPos = moved ? moved.pos : mover.pos;
-      setGame(next);
-      setRolling(false);
-      setHighlight(finalPos);
-      after(1100, () =>
-        setHighlight((h) => (h === finalPos ? null : h)),
-      );
+      // Square the token landed on before any snake/ladder applies.
+      const landed = applyMove(mover.pos, roll, boardSet(g.difficulty)).from;
 
-      if (next.winner !== null) {
-        const w = next.players[next.winner];
-        const wName = w ? w.name : mover.name;
-        playSound('win');
-        setMessage(fmt(t('snakeladder.winner'), { name: wName }));
-        track('game_completed', { game: 'snake-ladder' });
-        after(1400, () => finishWithWinner(next));
+      const finish = (): void => {
+        setGame(next);
+        setAnim(null);
+        setRolling(false);
+        setHighlight(finalPos);
+        after(1100, () =>
+          setHighlight((h) => (h === finalPos ? null : h)),
+        );
+
+        if (next.winner !== null) {
+          const w = next.players[next.winner];
+          const wName = w ? w.name : mover.name;
+          playSound('win');
+          setMessage(fmt(t('snakeladder.winner'), { name: wName }));
+          track('game_completed', { game: 'snake-ladder' });
+          after(1400, () => finishWithWinner(next));
+          return;
+        }
+        if (event === 'ladder') {
+          setMessage(
+            fmt(t('snakeladder.climbedLadder'), {
+              name: mover.name,
+              square: finalPos,
+            }),
+          );
+        } else if (event === 'snake') {
+          setMessage(
+            fmt(t('snakeladder.slidSnake'), {
+              name: mover.name,
+              square: finalPos,
+            }),
+          );
+        } else if (finalPos === mover.pos) {
+          // Overshot 100: exact roll needed, token stayed put.
+          setMessage(fmt(t('snakeladder.stayedPut'), { name: mover.name }));
+        } else if (extraTurn) {
+          setMessage(t('snakeladder.extraTurnNote'));
+        }
+      };
+
+      // Walk the token square by square so everyone sees the journey,
+      // then glide it up the ladder / down the snake across the board.
+      const steps: number[] = [];
+      for (let s = mover.pos + 1; s <= landed; s += 1) steps.push(s);
+      if (steps.length === 0) {
+        finish();
         return;
       }
-      if (event === 'ladder') {
-        playSound('correct');
-        setMessage(
-          fmt(t('snakeladder.climbedLadder'), {
-            name: mover.name,
-            square: finalPos,
-          }),
-        );
-      } else if (event === 'snake') {
-        playSound('skip');
-        setMessage(
-          fmt(t('snakeladder.slidSnake'), {
-            name: mover.name,
-            square: finalPos,
-          }),
-        );
-      } else if (finalPos === mover.pos) {
-        // Overshot 100: exact roll needed, token stayed put.
-        setMessage(fmt(t('snakeladder.stayedPut'), { name: mover.name }));
-      } else if (extraTurn) {
-        setMessage(t('snakeladder.extraTurnNote'));
-      }
+      let i = 0;
+      setAnim({ idx: moverIdx, square: mover.pos, glide: false });
+      const stepIv = every(190, () => {
+        const s = steps[i];
+        if (s === undefined) {
+          window.clearInterval(stepIv);
+          return;
+        }
+        setAnim({ idx: moverIdx, square: s, glide: false });
+        i += 1;
+        if (i >= steps.length) {
+          window.clearInterval(stepIv);
+          if (event) {
+            playSound(event === 'ladder' ? 'correct' : 'skip');
+            after(220, () => {
+              setAnim({ idx: moverIdx, square: finalPos, glide: true });
+              after(780, finish);
+            });
+          } else {
+            after(120, finish);
+          }
+        }
+      });
     });
+  }
+
+  if (showMpLobby) {
+    const hostName = (names[0] ?? '').trim() || (namePhs[0] ?? 'Player 1');
+    return (
+      <div className="sl-wrap">
+        <MpLobby
+          gameId="snake-ladder"
+          hostName={hostName}
+          config={{ extraTurnOnSix, difficulty }}
+          minPlayers={2}
+          maxPlayers={4}
+          buildInitialState={(players) =>
+            initialSlMpState(
+              [...players].sort((a, b) => a.seat - b.seat).map((p) => p.name),
+              { extraTurnOnSix, difficulty },
+            )
+          }
+          onStart={(s) => {
+            window.location.hash = `#/mp/snake-ladder/${s.code}`;
+          }}
+          onCancel={() => setShowMpLobby(false)}
+        />
+      </div>
+    );
   }
 
   if (phase === 'setup' || !game) {
@@ -204,21 +278,56 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
               aria-label={t('snakeladder.vsComputer')}
             >
               <Button
-                variant={!vsComputer ? 'primary' : 'secondary'}
+                variant={!vsComputer && !mpMode ? 'primary' : 'secondary'}
                 size="md"
-                onClick={() => setVsComputer(false)}
+                onClick={() => {
+                  setVsComputer(false);
+                  setMpMode(false);
+                }}
               >
                 👥 {t('snakeladder.passAndPlay')}
               </Button>
               <Button
-                variant={vsComputer ? 'primary' : 'secondary'}
+                variant={vsComputer && !mpMode ? 'primary' : 'secondary'}
                 size="md"
-                onClick={() => setVsComputer(true)}
+                onClick={() => {
+                  setVsComputer(true);
+                  setMpMode(false);
+                }}
               >
                 🖥 {t('snakeladder.vsComputer')}
               </Button>
+              <Button
+                variant={mpMode ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => {
+                  setMpMode(true);
+                  setVsComputer(false);
+                }}
+              >
+                📲 {t('mp.multiPhone')}
+              </Button>
             </div>
-            {vsComputer ? (
+            {mpMode ? (
+              <div className="sl-field">
+                <label className="sl-label" htmlFor="sl-name-0">
+                  {t('mp.yourName')}
+                </label>
+                <input
+                  id="sl-name-0"
+                  value={names[0] ?? ''}
+                  placeholder={namePhs[0] ?? ''}
+                  maxLength={20}
+                  autoComplete="off"
+                  onChange={(e) =>
+                    setNames((prev) =>
+                      prev.map((v, j) => (j === 0 ? e.target.value : v)),
+                    )
+                  }
+                />
+                <p className="sl-label">{t('mp.multiPhoneDesc')}</p>
+              </div>
+            ) : vsComputer ? (
               <>
                 <div className="sl-field">
                   <label className="sl-label" htmlFor="sl-name-0">
@@ -290,6 +399,38 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                 ))}
               </>
             )}
+            <div className="sl-field">
+              <span className="sl-label">{t('snakeladder.difficulty')}</span>
+              <div
+                className="sl-count-row"
+                role="group"
+                aria-label={t('snakeladder.difficulty')}
+              >
+                {(
+                  [
+                    ['easy', t('snakeladder.easy')],
+                    ['medium', t('snakeladder.medium')],
+                    ['hard', t('snakeladder.hard')],
+                  ] as Array<[SlDifficulty, string]>
+                ).map(([d, label]) => (
+                  <Button
+                    key={d}
+                    variant={difficulty === d ? 'primary' : 'secondary'}
+                    size="md"
+                    onClick={() => setDifficulty(d)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+              <span className="sl-label" style={{ fontWeight: 400 }}>
+                {difficulty === 'easy'
+                  ? t('snakeladder.easyDesc')
+                  : difficulty === 'hard'
+                    ? t('snakeladder.hardDesc')
+                    : t('snakeladder.mediumDesc')}
+              </span>
+            </div>
             <label className="sl-toggle">
               <input
                 type="checkbox"
@@ -298,8 +439,20 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
               />
               <span>{t('snakeladder.extraTurn')}</span>
             </label>
-            <Button variant="primary" size="lg" fullWidth onClick={startGame}>
-              {t('snakeladder.startGame')}
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => {
+                if (mpMode) {
+                  playSound('click');
+                  setShowMpLobby(true);
+                } else {
+                  startGame();
+                }
+              }}
+            >
+              {mpMode ? `📲 ${t('mp.createRoom')}` : t('snakeladder.startGame')}
             </Button>
           </div>
         </Card>
@@ -373,7 +526,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
         {CELLS.map(({ n, row, col }) => {
           const tokens: Array<{ p: SlPlayer; i: number }> = [];
           game.players.forEach((p, i) => {
-            if (p.pos === n) tokens.push({ p, i });
+            if (p.pos === n && anim?.idx !== i) tokens.push({ p, i });
           });
           return (
             <div
@@ -382,16 +535,6 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
               style={{ gridRow: row + 1, gridColumn: col + 1 }}
             >
               <span className="sl-num">{n}</span>
-              {SNAKES[n] !== undefined && (
-                <span className="sl-mark" aria-hidden>
-                  🐍
-                </span>
-              )}
-              {LADDERS[n] !== undefined && (
-                <span className="sl-mark" aria-hidden>
-                  🪜
-                </span>
-              )}
               {tokens.length > 0 && (
                 <div className="sl-tokens">
                   {tokens.map(({ p, i }, k) => {
@@ -416,6 +559,19 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
             </div>
           );
         })}
+        <BoardOverlay set={boardSet(game.difficulty)} />
+        {anim && anim.square >= 1 && (
+          <span
+            className={`sl-anim-token${anim.glide ? ' glide' : ' hop'}`}
+            style={{
+              ...squareCenterPct(anim.square),
+              backgroundColor: game.players[anim.idx]?.color ?? '#888',
+            }}
+            aria-hidden
+          >
+            {(game.players[anim.idx]?.name.trim().charAt(0).toUpperCase() ?? '?') || '?'}
+          </span>
+        )}
       </div>
 
       <div className="sl-standings" aria-label={t('snakeladder.positions')}>

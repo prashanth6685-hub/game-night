@@ -26,6 +26,8 @@ import type { LudoMove, LudoState } from '../logic/ludo.ts';
 import { chooseMove } from '../logic/bot.ts';
 import './ludo.css';
 import { randomExampleNames } from '../../../shared/names.ts';
+import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
+import { initialLudoMpState } from '../multiplayer/MpGame.tsx';
 
 type Phase = 'setup' | 'play';
 
@@ -95,6 +97,8 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
 
   const [phase, setPhase] = useState<Phase>('setup');
   const [playerCount, setPlayerCount] = useState(2);
+  const [mpMode, setMpMode] = useState(false);
+  const [showMpLobby, setShowMpLobby] = useState(false);
   const [names, setNames] = useState<string[]>(['', '', '', '']);
   const [kinds, setKinds] = useState<boolean[]>([false, false, false, false]);
   const namePhs = useMemo(() => randomExampleNames(4), []);
@@ -330,6 +334,32 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
     return [label, ...tags].join(' ');
   }
 
+  // ---------- multi-phone lobby ----------
+
+  if (showMpLobby) {
+    const hostName = (names[0] ?? '').trim() || (namePhs[0] ?? 'Player 1');
+    return (
+      <div className="lu-wrap">
+        <MpLobby
+          gameId="ludo"
+          hostName={hostName}
+          config={{ seats: playerCount }}
+          minPlayers={playerCount}
+          maxPlayers={playerCount}
+          buildInitialState={(players) =>
+            initialLudoMpState(
+              [...players].sort((a, b) => a.seat - b.seat).map((p) => p.name),
+            )
+          }
+          onStart={(s) => {
+            window.location.hash = `#/mp/ludo/${s.code}`;
+          }}
+          onCancel={() => setShowMpLobby(false)}
+        />
+      </div>
+    );
+  }
+
   // ---------- setup phase ----------
 
   if (phase === 'setup' || !game) {
@@ -337,6 +367,26 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
       <div className="lu-wrap">
         <Card title={t('ludo.setupTitle')}>
           <div className="lu-setup">
+            <div
+              className="lu-count-row"
+              role="group"
+              aria-label={t('mp.multiPhone')}
+            >
+              <Button
+                variant={!mpMode ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => setMpMode(false)}
+              >
+                👥 {t('ludo.passAndPlay')}
+              </Button>
+              <Button
+                variant={mpMode ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => setMpMode(true)}
+              >
+                📲 {t('mp.multiPhone')}
+              </Button>
+            </div>
             <div className="lu-field">
               <span className="lu-label">{t('ludo.playerCount')}</span>
               <div
@@ -356,6 +406,33 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
                 ))}
               </div>
             </div>
+            {mpMode ? (
+              <div className="lu-seat">
+                <div className="lu-seat__head">
+                  <span
+                    className="lu-dot"
+                    style={{ backgroundColor: PLAYER_COLORS[0] }}
+                    aria-hidden
+                  />
+                  <span className="lu-seat__name">{t('mp.yourName')}</span>
+                </div>
+                <input
+                  id="ludo-mp-name"
+                  value={names[0] ?? ''}
+                  placeholder={namePhs[0] ?? ''}
+                  maxLength={20}
+                  autoComplete="off"
+                  aria-label={t('mp.yourName')}
+                  onChange={(e) =>
+                    setNames((prev) =>
+                      prev.map((v, j) => (j === 0 ? e.target.value : v)),
+                    )
+                  }
+                />
+                <p className="lu-label">{t('mp.multiPhoneDesc')}</p>
+              </div>
+            ) : (
+              <>
             {Array.from({ length: playerCount }, (_, i) => {
               const isBot = kinds[i] ?? false;
               return (
@@ -414,11 +491,27 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
                 </div>
               );
             })}
-            <Button variant="secondary" size="lg" fullWidth onClick={quickVsComputer}>
-              {t('ludo.playVsComputer')}
-            </Button>
-            <Button variant="primary" size="lg" fullWidth onClick={startGame}>
-              {t('ludo.startGame')}
+              </>
+            )}
+            {!mpMode && (
+              <Button variant="secondary" size="lg" fullWidth onClick={quickVsComputer}>
+                {t('ludo.playVsComputer')}
+              </Button>
+            )}
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              onClick={() => {
+                if (mpMode) {
+                  playSound('click');
+                  setShowMpLobby(true);
+                } else {
+                  startGame();
+                }
+              }}
+            >
+              {mpMode ? `📲 ${t('mp.createRoom')}` : t('ludo.startGame')}
             </Button>
           </div>
         </Card>

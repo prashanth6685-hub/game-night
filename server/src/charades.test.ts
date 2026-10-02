@@ -47,6 +47,28 @@ test('buildPrompt uses the requested count', () => {
   assert.match(p, /exactly 12 items/);
 });
 
+test('buildPrompt treats the category as one exact full phrase', () => {
+  const p = buildPrompt({ ...baseInput, category: 'Hollywood actors' });
+  // The full two-word phrase survives whole, quoted as a single category.
+  assert.match(p, /"Hollywood actors"/);
+  // …and the model is told every word is a required qualifier (the reported
+  // bug: "Hollywood actors" returned generic actors because only "actors"
+  // was honored).
+  assert.match(p, /required qualifier/);
+  assert.match(p, /not actors in general/i);
+  assert.match(p, /REMOVE every item that does not fit ALL words/);
+});
+
+test('validateGenerateInput keeps the full category phrase intact', () => {
+  const r = validateGenerateInput({
+    category: '  Hollywood   actors ',
+    language: 'en',
+    difficulty: 'medium',
+  });
+  assert.equal(r.ok, true);
+  if (r.ok) assert.equal(r.value.category, 'Hollywood actors');
+});
+
 // ---------- sanitizer ----------
 
 test('sanitizeWords passes through a valid JSON array', () => {

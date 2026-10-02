@@ -27,6 +27,9 @@ import {
   type PatternId,
 } from '../logic/bingo.ts';
 import { botClaimDelay, botDaubedCount } from '../logic/bot.ts';
+import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
+import { initialBingoMpState } from '../multiplayer/MpGame.tsx';
+import type { BingoMpConfig } from '../multiplayer/MpGame.tsx';
 import './bingo.css';
 
 type Phase = 'setup' | 'play';
@@ -84,6 +87,10 @@ export default function GameScreen({
   const [phase, setPhase] = useState<Phase>('setup');
   const [playerName, setPlayerName] = useState('');
   const [botCount, setBotCount] = useState(MAX_BOTS);
+  const [mpMode, setMpMode] = useState(false);
+  const [showMpLobby, setShowMpLobby] = useState(false);
+  const [mpPattern, setMpPattern] = useState<PatternId>('line');
+  const [mpIntervalSec, setMpIntervalSec] = useState(3);
   const namePh = useMemo(() => randomExampleName(), []);
   const botNames = useMemo(() => randomExampleNames(botCount), [botCount]);
 
@@ -284,6 +291,30 @@ export default function GameScreen({
     return fmt(t('bingo.cellNotCalled'), { n: v });
   }
 
+  if (showMpLobby) {
+    const hostName = playerName.trim() || namePh;
+    const config: BingoMpConfig = {
+      pattern: mpPattern,
+      intervalSec: mpIntervalSec,
+    };
+    return (
+      <div className="bg-wrap">
+        <MpLobby
+          gameId="bingo"
+          hostName={hostName}
+          config={config}
+          minPlayers={2}
+          maxPlayers={6}
+          buildInitialState={() => initialBingoMpState(mpIntervalSec)}
+          onStart={(s) => {
+            window.location.hash = `#/mp/bingo/${s.code}`;
+          }}
+          onCancel={() => setShowMpLobby(false)}
+        />
+      </div>
+    );
+  }
+
   if (phase === 'setup') {
     return (
       <div className="bg-wrap">
@@ -303,49 +334,132 @@ export default function GameScreen({
             />
           </div>
           <div className="bg-field">
-            <span className="bg-label">{t('bingo.bots')}</span>
+            <span className="bg-label">{t('bingo.mpMode')}</span>
             <div
               className="bg-count-row"
               role="group"
-              aria-label={t('bingo.bots')}
+              aria-label={t('bingo.mpMode')}
             >
-              {[1, 2, 3, 4, 5].map((n) => (
-                <Button
-                  key={n}
-                  variant={botCount === n ? 'primary' : 'secondary'}
-                  size="md"
-                  onClick={() => setBotCount(n)}
-                >
-                  {n}
-                </Button>
-              ))}
+              <Button
+                variant={!mpMode ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => setMpMode(false)}
+              >
+                🖥 {t('bingo.mpVsComputer')}
+              </Button>
+              <Button
+                variant={mpMode ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => setMpMode(true)}
+              >
+                📲 {t('mp.multiPhone')}
+              </Button>
             </div>
           </div>
-          <ul className="bg-seats" aria-label={t('bingo.bots')}>
-            <li className="bg-seat">
-              <Avatar name={playerName.trim() || namePh} color={SEAT_COLORS[0]} size={32} />
-              <span>{playerName.trim() || namePh}</span>
-              <span className="bg-seat__tag" aria-hidden>
-                🙂
-              </span>
-            </li>
-            {botNames.map((bn, i) => (
-              <li className="bg-seat" key={bn}>
-                <Avatar
-                  name={bn}
-                  color={SEAT_COLORS[(i + 1) % SEAT_COLORS.length]}
-                  size={32}
-                />
-                <span>{bn}</span>
-                <span className="bg-seat__tag" aria-hidden>
-                  🤖
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="bg-muted">{t('bingo.computerThinking')}</p>
-          <Button variant="primary" size="lg" fullWidth onClick={startGame}>
-            {t('bingo.startGame')}
+          {mpMode ? (
+            <>
+              <div className="bg-field">
+                <span className="bg-label">{t('bingo.mpPattern')}</span>
+                <div
+                  className="bg-count-row"
+                  role="group"
+                  aria-label={t('bingo.mpPattern')}
+                >
+                  {(['line', 'four-corners', 'blackout'] as PatternId[]).map(
+                    (p) => (
+                      <Button
+                        key={p}
+                        variant={mpPattern === p ? 'primary' : 'secondary'}
+                        size="md"
+                        onClick={() => setMpPattern(p)}
+                      >
+                        {t(patternNameKey(p))}
+                      </Button>
+                    ),
+                  )}
+                </div>
+              </div>
+              <div className="bg-field">
+                <span className="bg-label">{t('bingo.mpInterval')}</span>
+                <div
+                  className="bg-count-row"
+                  role="group"
+                  aria-label={t('bingo.mpInterval')}
+                >
+                  {[3, 4, 5].map((seconds) => (
+                    <Button
+                      key={seconds}
+                      variant={mpIntervalSec === seconds ? 'primary' : 'secondary'}
+                      size="md"
+                      onClick={() => setMpIntervalSec(seconds)}
+                    >
+                      {fmt(t('bingo.mpIntervalOption'), { n: seconds })}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <p className="bg-muted">{t('mp.multiPhoneDesc')}</p>
+            </>
+          ) : (
+            <>
+              <div className="bg-field">
+                <span className="bg-label">{t('bingo.bots')}</span>
+                <div
+                  className="bg-count-row"
+                  role="group"
+                  aria-label={t('bingo.bots')}
+                >
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Button
+                      key={n}
+                      variant={botCount === n ? 'primary' : 'secondary'}
+                      size="md"
+                      onClick={() => setBotCount(n)}
+                    >
+                      {n}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <ul className="bg-seats" aria-label={t('bingo.bots')}>
+                <li className="bg-seat">
+                  <Avatar name={playerName.trim() || namePh} color={SEAT_COLORS[0]} size={32} />
+                  <span>{playerName.trim() || namePh}</span>
+                  <span className="bg-seat__tag" aria-hidden>
+                    🙂
+                  </span>
+                </li>
+                {botNames.map((bn, i) => (
+                  <li className="bg-seat" key={bn}>
+                    <Avatar
+                      name={bn}
+                      color={SEAT_COLORS[(i + 1) % SEAT_COLORS.length]}
+                      size={32}
+                    />
+                    <span>{bn}</span>
+                    <span className="bg-seat__tag" aria-hidden>
+                      🤖
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="bg-muted">{t('bingo.computerThinking')}</p>
+            </>
+          )}
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={() => {
+              if (mpMode) {
+                playSound('click');
+                setShowMpLobby(true);
+              } else {
+                startGame();
+              }
+            }}
+          >
+            {mpMode ? `📲 ${t('mp.createRoom')}` : t('bingo.startGame')}
           </Button>
         </Card>
       </div>

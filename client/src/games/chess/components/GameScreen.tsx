@@ -11,7 +11,9 @@ import { track } from '../../../shared/analytics.ts';
 import { getStatus, type ChessStatus } from '../logic/status.ts';
 import ChessBoard, { type LegalTarget } from './ChessBoard.tsx';
 import './chess.css';
-import { randomExampleNames } from '../../../shared/names.ts';
+import { randomExampleName, randomExampleNames } from '../../../shared/names.ts';
+import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
+import { initialChessMpState } from '../multiplayer/MpGame.tsx';
 
 type Phase = 'setup' | 'play';
 type PromotionPiece = 'q' | 'r' | 'b' | 'n';
@@ -57,6 +59,10 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   const [whiteNameInput, setWhiteNameInput] = useState('');
   const [blackNameInput, setBlackNameInput] = useState('');
   const namePhs = useMemo(() => randomExampleNames(2), []);
+  const [mpMode, setMpMode] = useState(false);
+  const [showMpLobby, setShowMpLobby] = useState(false);
+  const [mpNameInput, setMpNameInput] = useState('');
+  const mpNamePh = useMemo(() => randomExampleName(), []);
   const [version, setVersion] = useState(0);
   const [orientation, setOrientation] = useState<'w' | 'b'>('w');
   const [selected, setSelected] = useState<string | null>(null);
@@ -275,32 +281,98 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     return null;
   };
 
+  if (showMpLobby) {
+    const hostName = mpNameInput.trim() || mpNamePh;
+    return (
+      <MpLobby
+        gameId="chess"
+        hostName={hostName}
+        config={{}}
+        minPlayers={2}
+        maxPlayers={2}
+        buildInitialState={() => initialChessMpState()}
+        onStart={(s) => {
+          window.location.hash = `#/mp/chess/${s.code}`;
+        }}
+        onCancel={() => setShowMpLobby(false)}
+      />
+    );
+  }
+
   if (phase === 'setup' || !chess || !status) {
     return (
       <Card title={t('chess.setupTitle')}>
         <div className="chess-setup">
-          <label>
-            {t('chess.whiteName')}
-            <input
-              value={whiteNameInput}
-              onChange={(e) => setWhiteNameInput(e.target.value)}
-              placeholder={namePhs[0] ?? ''}
-              maxLength={24}
-              autoComplete="off"
-            />
-          </label>
-          <label>
-            {t('chess.blackName')}
-            <input
-              value={blackNameInput}
-              onChange={(e) => setBlackNameInput(e.target.value)}
-              placeholder={namePhs[1] ?? ''}
-              maxLength={24}
-              autoComplete="off"
-            />
-          </label>
-          <Button variant="primary" size="lg" fullWidth onClick={startGame}>
-            {t('chess.startGame')}
+          <div className="chess-mode-row" role="group" aria-label={t('mp.multiPhone')}>
+            <Button
+              variant={!mpMode ? 'primary' : 'secondary'}
+              size="md"
+              onClick={() => setMpMode(false)}
+            >
+              👥 {t('chess.passAndPlay')}
+            </Button>
+            <Button
+              variant={mpMode ? 'primary' : 'secondary'}
+              size="md"
+              onClick={() => setMpMode(true)}
+            >
+              📲 {t('mp.multiPhone')}
+            </Button>
+          </div>
+          {mpMode ? (
+            <>
+              <label>
+                {t('mp.yourName')}
+                <input
+                  value={mpNameInput}
+                  onChange={(e) => setMpNameInput(e.target.value)}
+                  placeholder={mpNamePh}
+                  maxLength={24}
+                  autoComplete="off"
+                />
+              </label>
+              <p className="chess-mp-note">
+                ♔ {t('chess.mpYouAreWhite')} · {t('mp.multiPhoneDesc')}
+              </p>
+            </>
+          ) : (
+            <>
+              <label>
+                {t('chess.whiteName')}
+                <input
+                  value={whiteNameInput}
+                  onChange={(e) => setWhiteNameInput(e.target.value)}
+                  placeholder={namePhs[0] ?? ''}
+                  maxLength={24}
+                  autoComplete="off"
+                />
+              </label>
+              <label>
+                {t('chess.blackName')}
+                <input
+                  value={blackNameInput}
+                  onChange={(e) => setBlackNameInput(e.target.value)}
+                  placeholder={namePhs[1] ?? ''}
+                  maxLength={24}
+                  autoComplete="off"
+                />
+              </label>
+            </>
+          )}
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={() => {
+              if (mpMode) {
+                playSound('click');
+                setShowMpLobby(true);
+              } else {
+                startGame();
+              }
+            }}
+          >
+            {mpMode ? `📲 ${t('mp.createRoom')}` : t('chess.startGame')}
           </Button>
         </div>
       </Card>

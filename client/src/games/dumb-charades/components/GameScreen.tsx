@@ -1,6 +1,8 @@
 // Dumb Charades game screen — owns the setup → play flow.
-// Setup collects the custom category + full game config in a dialog;
-// finishing calls onFinish with translated strings. The app shell handles exit.
+// Setup collects the custom category + full game config in a dialog.
+// Same-device games hand off to PlayPhase; multi-phone games open the QR
+// lobby (words stay on the host's phone as hostData) and then route every
+// phone to #/mp/dumb-charades/<code>.
 import { useState } from 'react';
 import type { GameScreenProps } from '../../types.ts';
 import type {
@@ -9,6 +11,9 @@ import type {
 } from '../data/types.ts';
 import SetupPhase from './SetupPhase.tsx';
 import PlayPhase from './PlayPhase.tsx';
+import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
+import { initialCharadesMpState } from '../multiplayer/MpGame.tsx';
+import type { CharadesMpConfig } from '../multiplayer/MpGame.tsx';
 import './charades.css';
 
 export interface CharadesSetup {
@@ -20,6 +25,8 @@ export interface CharadesSetup {
   difficulty: CharadesDifficulty;
   timerSecs: number;
   teams: CharadesTeams;
+  /** Multi-phone only: display name of the hosting player. */
+  hostName?: string;
 }
 
 export interface CharadesTeams {
@@ -28,7 +35,7 @@ export interface CharadesTeams {
   rounds: number | null;
 }
 
-type Phase = 'setup' | 'play';
+type Phase = 'setup' | 'play' | 'mp-lobby';
 
 export default function GameScreen({ onFinish }: GameScreenProps) {
   const [phase, setPhase] = useState<Phase>('setup');
@@ -39,11 +46,45 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     setPhase('play');
   };
 
+  const handleSetupMulti = (s: CharadesSetup): void => {
+    setSetup(s);
+    setPhase('mp-lobby');
+  };
+
   if (phase === 'play' && setup) {
     return (
       <PlayPhase setup={setup} teams={setup.teams} onFinish={onFinish} />
     );
   }
 
-  return <SetupPhase onStart={handleSetupDone} />;
+  if (phase === 'mp-lobby' && setup) {
+    const config: CharadesMpConfig = {
+      category: setup.customCategory,
+      timerSecs: setup.timerSecs,
+      rounds: setup.teams.rounds,
+      teamCount: setup.teams.names.length,
+      language: setup.language,
+    };
+    return (
+      <MpLobby
+        gameId="dumb-charades"
+        hostName={setup.hostName ?? ''}
+        config={config}
+        minPlayers={Math.max(2, setup.teams.names.length)}
+        maxPlayers={20}
+        hostData={setup.customWords}
+        buildInitialState={(players) =>
+          initialCharadesMpState(players, config, setup.teams.names)
+        }
+        onStart={(s) => {
+          window.location.hash = `#/mp/dumb-charades/${s.code}`;
+        }}
+        onCancel={() => setPhase('setup')}
+      />
+    );
+  }
+
+  return (
+    <SetupPhase onStart={handleSetupDone} onStartMulti={handleSetupMulti} />
+  );
 }

@@ -42,13 +42,18 @@ const LANG_INSTRUCTIONS: Record<GenLanguage, string> = {
 export function buildPrompt(input: GenerateInput): string {
   return [
     'You are a family party game assistant creating a Dumb Charades word list.',
-    `Generate exactly ${input.count} items for the category "${input.category}".`,
+    `Generate exactly ${input.count} items for this category. Treat the category as ONE exact phrase, kept whole: "${input.category}".`,
+    'CRITICAL — use the FULL phrase, every word of it:',
+    `- Every word in "${input.category}" is a required qualifier. Never drop, ignore, or generalize any word of the phrase, and never substitute a broader or neighboring category.`,
+    '- Example: the category "Hollywood actors" means ONLY Hollywood (American film industry) actors — not actors in general, and not Bollywood, Tollywood, Kollywood, or any other film industry\'s actors. The category "Telugu movies" means only Telugu-language movies, not Indian movies in general.',
+    '- If you cannot think of enough items that fit the FULL phrase, return fewer items rather than padding the list with items that only fit part of the phrase.',
     `Language: ${LANG_INSTRUCTIONS[input.language]}.`,
     `Difficulty: ${input.difficulty} — pick items a casual family audience would know at this level.`,
     'Rules:',
     '- Family-friendly only: suitable for all ages, nothing offensive or inappropriate.',
     '- Each item must be 1 to 5 words.',
     '- No duplicates or near-duplicates.',
+    '- Final self-check before answering: go through your list and REMOVE every item that does not fit ALL words of the category phrase exactly.',
     '- Respond with ONLY a JSON array of strings, e.g. ["Item One", "Item Two"].',
     '- No markdown, no code fences, no explanations, no other text.',
   ].join('\n');
@@ -103,8 +108,13 @@ export function validateGenerateInput(body: unknown): ValidateResult {
   }
   const b = body as Record<string, unknown>;
   const rawCategory = typeof b.category === 'string' ? b.category : '';
-  // Strip control characters (never trust raw input into a prompt).
-  const category = rawCategory.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  // Strip control characters (never trust raw input into a prompt) and
+  // collapse runs of whitespace — but keep the FULL phrase intact: every
+  // word of e.g. "Hollywood actors" is a required qualifier downstream.
+  const category = rawCategory
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   if (category.length < 2 || category.length > 60) {
     return { ok: false, error: 'category must be 2-60 characters' };
   }
@@ -267,7 +277,7 @@ async function attemptGemini(
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.9, maxOutputTokens: 1500 },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 1500 },
         }),
         signal,
       });

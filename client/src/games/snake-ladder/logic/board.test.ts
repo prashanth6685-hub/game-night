@@ -3,9 +3,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  BOARD_SETS,
   LADDERS,
   SNAKES,
   applyMove,
+  boardSet,
   rollDice,
   squareToRowCol,
 } from './board.ts';
@@ -95,6 +97,56 @@ describe('applyMove', () => {
 
   it('snake at 98 drops to 78 near the finish', () => {
     assert.deepEqual(applyMove(97, 1), { pos: 78, event: 'snake', from: 98 });
+  });
+});
+
+describe('difficulty board sets', () => {
+  it('easy has more ladders than snakes; hard is the reverse', () => {
+    const easy = BOARD_SETS.easy;
+    const hard = BOARD_SETS.hard;
+    assert.ok(
+      Object.keys(easy.ladders).length > Object.keys(easy.snakes).length,
+      'easy should be ladder-rich',
+    );
+    assert.ok(
+      Object.keys(hard.snakes).length >= 12,
+      'hard should be snake-heavy',
+    );
+    assert.ok(
+      Object.keys(hard.ladders).length <= 4,
+      'hard should have very few ladders',
+    );
+    assert.equal(boardSet('medium').ladders, LADDERS);
+    assert.equal(boardSet('medium').snakes, SNAKES);
+  });
+
+  it('every set is internally valid (up/down, no shared starts)', () => {
+    for (const set of Object.values(BOARD_SETS)) {
+      for (const [from, to] of Object.entries(set.ladders)) {
+        assert.ok(to > Number(from), `ladder ${from}->${to} must go up`);
+        assert.ok(!(from in set.snakes), `square ${from} is both ladder and snake`);
+      }
+      for (const [from, to] of Object.entries(set.snakes)) {
+        assert.ok(to < Number(from), `snake ${from}->${to} must go down`);
+      }
+    }
+  });
+
+  it('applyMove honors the chosen set', () => {
+    // Easy: 2 is a ladder foot (not in medium). Hard: 24 is a snake head.
+    assert.deepEqual(applyMove(0, 2, BOARD_SETS.easy), {
+      pos: 23,
+      event: 'ladder',
+      from: 2,
+    });
+    assert.deepEqual(applyMove(22, 2, BOARD_SETS.hard), {
+      pos: 8,
+      event: 'snake',
+      from: 24,
+    });
+    // Same rolls on medium are plain moves.
+    assert.deepEqual(applyMove(0, 2), { pos: 2, event: null, from: 2 });
+    assert.deepEqual(applyMove(22, 2), { pos: 24, event: null, from: 24 });
   });
 });
 

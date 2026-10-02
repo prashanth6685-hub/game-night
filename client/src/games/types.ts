@@ -35,3 +35,13 @@ export interface GameScreenProps {
   /** Call to leave the game -> back to the lobby */
   onExit: () => void;
 }
+
+/** Props for a game's multi-phone (QR) screen, rendered at #/mp/<id>/<code>. */
+export interface MpScreenProps {
+  /** Room code the player joined (session lives in sessionStorage). */
+  code: string;
+  /** Call when the game ends -> app shows the shared Results screen */
+  onFinish: (result: GameResult) => void;
+  /** Call to leave the game -> back to the lobby */
+  onExit: () => void;
+}

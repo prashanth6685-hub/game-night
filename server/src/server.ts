@@ -18,6 +18,17 @@ import {
   startHandler,
   verifyHandler,
 } from './tambolaRooms.ts';
+import {
+  mpCreateRoomHandler,
+  mpEndHandler,
+  mpEventsHandler,
+  mpIntentHandler,
+  mpJoinHandler,
+  mpPostStateHandler,
+  mpRoomInfoHandler,
+  mpStartHandler,
+  mpStateHandler,
+} from './gameRooms.ts';
 
 const PORT = Number(process.env.PORT ?? 10000);
 const VERSION = '1.0.0';
@@ -32,6 +43,8 @@ const GAMES = [
   { id: 'tambola', icon: '🎟️', name: 'Tambola', minPlayers: 2, maxPlayers: null },
   { id: 'snake-ladder', icon: '🐍', name: 'Snake & Ladder', minPlayers: 2, maxPlayers: 4 },
   { id: 'chess', icon: '♟️', name: 'Chess', minPlayers: 2, maxPlayers: 2 },
+  { id: 'ludo', icon: '🎲', name: 'Ludo', minPlayers: 2, maxPlayers: 4 },
+  { id: 'bingo', icon: '🔢', name: 'Bingo', minPlayers: 2, maxPlayers: 6 },
 ];
 
 const app = express();
@@ -68,6 +81,17 @@ app.post('/api/tambola/rooms/:code/dab', dabHandler);
 app.post('/api/tambola/rooms/:code/claims', claimHandler);
 app.post('/api/tambola/rooms/:code/claims/:claimId/verify', verifyHandler);
 app.post('/api/tambola/rooms/:code/end', endHandler);
+
+// Generic multi-phone rooms for every other game (QR party play, SSE).
+app.post('/api/mp/rooms', mpCreateRoomHandler);
+app.get('/api/mp/rooms/:code', mpRoomInfoHandler);
+app.get('/api/mp/rooms/:code/state', mpStateHandler);
+app.get('/api/mp/rooms/:code/events', mpEventsHandler);
+app.post('/api/mp/rooms/:code/join', mpJoinHandler);
+app.post('/api/mp/rooms/:code/start', mpStartHandler);
+app.post('/api/mp/rooms/:code/state', mpPostStateHandler);
+app.post('/api/mp/rooms/:code/intent', mpIntentHandler);
+app.post('/api/mp/rooms/:code/end', mpEndHandler);
 
 if (existsSync(STATIC_DIR)) {
   app.use(

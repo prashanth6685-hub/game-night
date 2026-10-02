@@ -23,6 +23,7 @@ import ludoFrag from './fragments/ludo.en.json';
 import snakeladderFrag from './fragments/snakeladder.en.json';
 import tambolaFrag from './fragments/tambola.en.json';
 import uiFrag from './fragments/ui.en.json';
+import mpFrag from './fragments/mp.en.json';
 
 const fragmentDicts: Record<string, unknown>[] = [
   bingoFrag as Record<string, unknown>,
@@ -32,6 +33,7 @@ const fragmentDicts: Record<string, unknown>[] = [
   snakeladderFrag as Record<string, unknown>,
   tambolaFrag as Record<string, unknown>,
   uiFrag as Record<string, unknown>,
+  mpFrag as Record<string, unknown>,
 ];
 
 function deepMerge(

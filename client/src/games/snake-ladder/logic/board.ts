@@ -28,6 +28,72 @@ export const SNAKES: Record<number, number> = {
   98: 78,
 };
 
+export type SlDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface BoardSet {
+  ladders: Record<number, number>;
+  snakes: Record<number, number>;
+}
+
+/**
+ * Board layouts per difficulty (user rule: harder = many more snakes and
+ * very few ladders; easier = plenty of ladders and few snakes).
+ * Medium is the classic board above.
+ */
+export const BOARD_SETS: Record<SlDifficulty, BoardSet> = {
+  easy: {
+    ladders: {
+      2: 23,
+      6: 45,
+      11: 28,
+      15: 34,
+      17: 52,
+      22: 58,
+      25: 68,
+      36: 44,
+      42: 63,
+      62: 85,
+      74: 92,
+      81: 98,
+    },
+    snakes: {
+      27: 5,
+      40: 3,
+      54: 31,
+      79: 43,
+      95: 75,
+    },
+  },
+  medium: { ladders: LADDERS, snakes: SNAKES },
+  hard: {
+    ladders: {
+      9: 27,
+      28: 51,
+      60: 82,
+    },
+    snakes: {
+      16: 6,
+      24: 8,
+      32: 10,
+      38: 12,
+      47: 26,
+      49: 11,
+      56: 53,
+      62: 19,
+      64: 36,
+      71: 29,
+      78: 33,
+      87: 24,
+      93: 73,
+      98: 78,
+    },
+  },
+};
+
+export function boardSet(difficulty: SlDifficulty): BoardSet {
+  return BOARD_SETS[difficulty];
+}
+
 /** Roll a six-sided die. Pass a seeded rng in tests for determinism. */
 export function rollDice(rng: () => number = Math.random): number {
   return 1 + Math.floor(rng() * 6);
@@ -56,16 +122,20 @@ export interface MoveResult {
  * Otherwise the token lands on pos + roll, then climbs a ladder or
  * slides down a snake if the landing square has one.
  */
-export function applyMove(pos: number, roll: number): MoveResult {
+export function applyMove(
+  pos: number,
+  roll: number,
+  set: BoardSet = BOARD_SETS.medium,
+): MoveResult {
   const landed = pos + roll;
   if (landed > 100) {
     return { pos, event: null, from: pos };
   }
-  const ladderTo = LADDERS[landed];
+  const ladderTo = set.ladders[landed];
   if (ladderTo !== undefined) {
     return { pos: ladderTo, event: 'ladder', from: landed };
   }
-  const snakeTo = SNAKES[landed];
+  const snakeTo = set.snakes[landed];
   if (snakeTo !== undefined) {
     return { pos: snakeTo, event: 'snake', from: landed };
   }

@@ -1,0 +1,82 @@
+/* Shared multi-phone (QR) multiplayer styles. */
+.mp-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mp-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.mp-qr img {
+  width: 220px;
+  height: 220px;
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px;
+}
+.mp-code {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+.mp-players {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mp-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+}
+.mp-player .mp-you {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+.mp-host-badge {
+  font-size: 0.72rem;
+  font-style: normal;
+  background: #4f46e5;
+  color: #fff;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.mp-turn-banner {
+  text-align: center;
+  font-weight: 700;
+  padding: 10px;
+  border-radius: 12px;
+  background: #eef2ff;
+}
+.mp-turn-banner.mine {
+  background: #dcfce7;
+}
+.mp-banner {
+  text-align: center;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fef9c3;
+  font-weight: 600;
+}
+.mp-error {
+  color: #b91c1c;
+  text-align: center;
+}
+.mp-muted {
+  opacity: 0.75;
+  text-align: center;
+}
+.mp-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.mp-row > * {
+  flex: 1;
+}

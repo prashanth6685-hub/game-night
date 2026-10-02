@@ -16,9 +16,13 @@ import {
   RoomLobbyScreen,
   useRoom,
 } from './shared/rooms/Rooms.tsx';
+import { getMpSession } from './shared/mp/session.ts';
 
 const TambolaJoinScreen = lazy(
   () => import('./games/tambola/multiplayer/JoinScreen.tsx'),
+);
+const JoinGameScreen = lazy(
+  () => import('./shared/mp/JoinGame.tsx').then((m) => ({ default: m.JoinGameScreen })),
 );
 
 export function nav(path: string): void {
@@ -37,6 +41,8 @@ type Route =
   | { name: 'rooms-join' }
   | { name: 'room'; code: string }
   | { name: 'tambola-join'; code: string }
+  | { name: 'join'; code: string }
+  | { name: 'mp'; gameId: string; code: string }
   | { name: 'settings' }
   | { name: 'about' };
 
@@ -44,6 +50,12 @@ function parseRoute(): Route {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
   if (parts[0] === 'tambola' && parts[1] === 'join' && parts[2]) {
     return { name: 'tambola-join', code: parts[2].toUpperCase() };
+  }
+  if (parts[0] === 'join' && parts[1]) {
+    return { name: 'join', code: parts[1].toUpperCase() };
+  }
+  if (parts[0] === 'mp' && parts[1] && parts[2]) {
+    return { name: 'mp', gameId: parts[1], code: parts[2].toUpperCase() };
   }
   if (parts[0] === 'game' && parts[1]) return { name: 'game', id: parts[1] };
   if (parts[0] === 'rooms' && parts[1] === 'new') return { name: 'rooms-new' };
@@ -185,6 +197,69 @@ function GameRoute({ id }: { id: string }) {
             track('game_abandoned', { game: id });
             goHome();
           }}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+// ------------------------------------------------- multi-phone (QR) play --
+function MpGameRoute({ gameId, code }: { gameId: string; code: string }) {
+  const { t } = useI18n();
+  const game = getGame(gameId);
+  const [result, setResult] = useState<GameResult | null>(null);
+  const session = getMpSession(code);
+  const goHome = () => nav('/');
+
+  if (!game || !game.loadMp) {
+    return (
+      <div className="gh-grid">
+        <ErrorMessage message={t('errors.generic')} onRetry={goHome} />
+      </div>
+    );
+  }
+  if (!session) {
+    // Scanned/opened without joining yet — send them to the join screen.
+    return (
+      <div className="gh-grid">
+        <Card>
+          <p className="gh-page-sub">{t('mp.roomCode')}: {code}</p>
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => nav(`/join/${code}`)}
+          >
+            {t('mp.joinGame')}
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+  if (result) {
+    return (
+      <ResultsScreen
+        result={result}
+        onPlayAgain={goHome}
+        onChooseAnother={goHome}
+        onHome={goHome}
+      />
+    );
+  }
+  const Comp = lazy(game.loadMp);
+  return (
+    <div className="gh-grid">
+      <GameHeader
+        title={`${game.meta.icon} ${t(game.meta.nameKey)}`}
+        onBack={goHome}
+      />
+      <Suspense fallback={<Spinner />}>
+        <Comp
+          code={code}
+          onFinish={(r) => {
+            track('game_completed', { game: gameId, mode: 'multi-phone' });
+            setResult(r);
+          }}
+          onExit={goHome}
         />
       </Suspense>
     </div>
@@ -375,6 +450,12 @@ export default function App() {
             <TambolaJoinScreen code={route.code} />
           </Suspense>
         )}
+        {route.name === 'join' && (
+          <Suspense fallback={<Spinner />}>
+            <JoinGameScreen code={route.code} />
+          </Suspense>
+        )}
+        {route.name === 'mp' && <MpGameRoute gameId={route.gameId} code={route.code} />}
         {route.name === 'settings' && <SettingsPage />}
         {route.name === 'about' && <AboutPage />}
       </main>

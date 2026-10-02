@@ -4,6 +4,7 @@
 export type AnalyticsEvent =
   | 'game_opened'
   | 'game_started'
+  | 'game_joined'
   | 'game_completed'
   | 'game_abandoned'
   | 'category_selected'

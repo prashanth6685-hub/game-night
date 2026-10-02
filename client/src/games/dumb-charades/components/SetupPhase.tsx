@@ -1,7 +1,7 @@
 // Setup phase: type any custom category, hit START, then configure the game
 // (language, difficulty, timer, rounds, teams) in a dialog. Words are
 // AI-generated per session — no preset categories.
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
 import {
@@ -13,12 +13,16 @@ import {
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
+import { randomExampleName } from '../../../shared/names.ts';
 import { generateCustomWords } from '../logic/customCategory.ts';
 import type { CharadesDifficulty, CharadesLang } from '../data/types.ts';
 import type { CharadesSetup, CharadesTeams } from './GameScreen.tsx';
 
 interface SetupPhaseProps {
   onStart: (setup: CharadesSetup) => void;
+  /** Multi-phone mode: words are generated the same way, then the host
+   *  opens a QR lobby instead of playing on this device. */
+  onStartMulti?: (setup: CharadesSetup) => void;
 }
 
 const TIMER_OPTIONS = [30, 60, 90, 120];
@@ -40,10 +44,13 @@ const LANGS: { id: CharadesLang; label: string }[] = [
 const TEAM_LETTERS = ['A', 'B', 'C', 'D'];
 const TEAM_COLORS = ['#4f46e5', '#16a34a', '#f59e0b', '#dc2626'];
 
-export default function SetupPhase({ onStart }: SetupPhaseProps) {
+export default function SetupPhase({ onStart, onStartMulti }: SetupPhaseProps) {
   const { t } = useI18n();
   const { toast } = useToast();
 
+  const [mode, setMode] = useState<'device' | 'multi'>('device');
+  const [hostName, setHostName] = useState<string>('');
+  const hostNamePh = useMemo(() => randomExampleName(), []);
   const [customText, setCustomText] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
 
@@ -85,20 +92,28 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
         language,
         difficulty,
       });
-      const rawNames = teamNames
-        .slice(0, teamCount)
-        .map((n, i) => n.trim() || defaultTeamName(i));
-      const seen = new Set<string>();
-      const names = rawNames.map((n) => {
-        let name = n;
-        let k = 2;
-        while (seen.has(name)) {
-          name = `${n} ${k}`;
-          k += 1;
-        }
-        seen.add(name);
-        return name;
-      });
+      let names: string[];
+      if (mode === 'multi') {
+        // Multi-phone: teams are auto-named; friends take seats in the lobby.
+        names = Array.from({ length: teamCount }, (_, i) =>
+          defaultTeamName(i),
+        );
+      } else {
+        const rawNames = teamNames
+          .slice(0, teamCount)
+          .map((n, i) => n.trim() || defaultTeamName(i));
+        const seen = new Set<string>();
+        names = rawNames.map((n) => {
+          let name = n;
+          let k = 2;
+          while (seen.has(name)) {
+            name = `${n} ${k}`;
+            k += 1;
+          }
+          seen.add(name);
+          return name;
+        });
+      }
       const teams: CharadesTeams = { names, rounds };
       track('custom_category_generated', {
         category: result.category,
@@ -106,14 +121,20 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
       });
       track('game_started', { game: 'dumb-charades' });
       setDialogOpen(false);
-      onStart({
+      const setup: CharadesSetup = {
         language,
         customCategory: result.category,
         customWords: result.words,
         difficulty,
         timerSecs,
         teams,
-      });
+      };
+      if (mode === 'multi' && onStartMulti) {
+        setup.hostName = hostName.trim() || hostNamePh;
+        onStartMulti(setup);
+      } else {
+        onStart(setup);
+      }
     } catch (err) {
       const msg =
         err instanceof Error && err.message
@@ -149,6 +170,52 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
   return (
     <div className="ch-screen">
       <h1 className="ch-title">🎭 {t('charades.setupTitle')}</h1>
+
+      <Card>
+        <span className="ch-section-label">{t('charades.playMode')}</span>
+        <div className="ch-segmented">
+          {seg(
+            mode === 'device',
+            () => setMode('device'),
+            `📱 ${t('charades.sameDevice')}`,
+            'mode-device',
+          )}
+          {seg(
+            mode === 'multi',
+            () => setMode('multi'),
+            `📲 ${t('mp.multiPhone')}`,
+            'mode-multi',
+          )}
+        </div>
+        {mode === 'multi' ? (
+          <>
+            <span
+              className="ch-section-label"
+              style={{ marginTop: 12 }}
+            >
+              {t('mp.yourName')}
+            </span>
+            <div className="ch-custom-row">
+              <input
+                className="ch-custom-input"
+                type="text"
+                value={hostName}
+                maxLength={24}
+                placeholder={hostNamePh}
+                aria-label={t('mp.yourName')}
+                autoComplete="off"
+                onChange={(e) => setHostName(e.target.value)}
+              />
+            </div>
+            <p
+              className="ch-word-hint"
+              style={{ textAlign: 'left', marginTop: 8 }}
+            >
+              {t('mp.multiPhoneDesc')}
+            </p>
+          </>
+        ) : null}
+      </Card>
 
       <Card>
         <span className="ch-section-label">{t('charades.customCategory')}</span>
@@ -235,23 +302,25 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
             )}
           </div>
 
-          <div className="ch-teams-list">
-            {Array.from({ length: teamCount }, (_, i) => (
-              <div className="ch-team-row" key={i}>
-                <span
-                  className="ch-team-dot"
-                  style={{ background: TEAM_COLORS[i % TEAM_COLORS.length] }}
-                />
-                <input
-                  value={teamNames[i] ?? ''}
-                  placeholder={defaultTeamName(i)}
-                  aria-label={`${t('charades.teamName')} ${i + 1}`}
-                  maxLength={24}
-                  onChange={(e) => setTeamName(i, e.target.value)}
-                />
-              </div>
-            ))}
-          </div>
+          {mode === 'device' ? (
+            <div className="ch-teams-list">
+              {Array.from({ length: teamCount }, (_, i) => (
+                <div className="ch-team-row" key={i}>
+                  <span
+                    className="ch-team-dot"
+                    style={{ background: TEAM_COLORS[i % TEAM_COLORS.length] }}
+                  />
+                  <input
+                    value={teamNames[i] ?? ''}
+                    placeholder={defaultTeamName(i)}
+                    aria-label={`${t('charades.teamName')} ${i + 1}`}
+                    maxLength={24}
+                    onChange={(e) => setTeamName(i, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           {genError ? (
             <div className="ch-gen-error" role="alert">
