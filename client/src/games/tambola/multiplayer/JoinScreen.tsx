@@ -1,7 +1,7 @@
 // Player join flow for multi-phone Tambola: opened from the QR code at
 // #/tambola/join/<CODE>. Enter name → get a ticket → dab + claim live.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
 import {
   Button,
@@ -15,6 +15,8 @@ import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 import { TambolaMp, openRoomEvents } from './api.ts';
 import type { MpClaimStatus, RoomResults } from './api.ts';
 import { PlayerTicket } from './PlayerTicket.tsx';
+import '../components/tambola.css';
+import { randomExampleName } from '../../../shared/names.ts';
 
 function goHome(): void {
   window.location.hash = '#/';
@@ -78,6 +80,7 @@ export default function JoinScreen({ code }: { code: string }): JSX.Element {
   const [error, setError] = useState('');
   const [roomStatus, setRoomStatus] = useState('');
   const [name, setName] = useState('');
+  const namePh = useMemo(() => randomExampleName(), []);
   const [joining, setJoining] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -304,7 +307,7 @@ export default function JoinScreen({ code }: { code: string }): JSX.Element {
             type="text"
             maxLength={24}
             autoComplete="nickname"
-            placeholder={t('tambola.namePlaceholder')}
+            placeholder={namePh}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {

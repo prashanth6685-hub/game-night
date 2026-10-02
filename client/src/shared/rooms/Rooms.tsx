@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { ITransport, Room } from './types.ts';
 import { RoomError } from './types.ts';
 import { InMemoryTransport } from './transports.ts';
+import { randomExampleName } from '../names.ts';
 import { GAMES } from '../../games/registry.ts';
 import { useI18n } from '../../i18n/index.ts';
 import {
@@ -65,6 +66,7 @@ export function CreateRoomScreen({ onCreated }: { onCreated: (code: string) => v
   const { t } = useI18n();
   const { transport } = useRoom();
   const [name, setName] = useState('');
+  const namePh = useMemo(() => randomExampleName(), []);
   const [gameId, setGameId] = useState(GAMES[0]!.meta.id);
   const { error, busy, run } = useRoomAction();
 
@@ -77,7 +79,7 @@ export function CreateRoomScreen({ onCreated }: { onCreated: (code: string) => v
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={t('rooms.yourName')}
+            placeholder={namePh}
             maxLength={24}
             autoComplete="off"
           />
@@ -116,6 +118,7 @@ export function JoinRoomScreen({ onJoined }: { onJoined: (code: string) => void 
   const { t } = useI18n();
   const { transport } = useRoom();
   const [name, setName] = useState('');
+  const namePh = useMemo(() => randomExampleName(), []);
   const [code, setCode] = useState('');
   const { error, busy, run } = useRoomAction();
 
@@ -139,7 +142,7 @@ export function JoinRoomScreen({ onJoined }: { onJoined: (code: string) => void 
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={t('rooms.yourName')}
+            placeholder={namePh}
             maxLength={24}
             autoComplete="off"
           />
@@ -170,6 +173,7 @@ export function RoomLobbyScreen({ onStart }: { onStart: (room: Room) => void }) 
   const { transport, room } = useRoom();
   const { error, busy, run } = useRoomAction();
   const [newName, setNewName] = useState('');
+  const newNamePh = useMemo(() => randomExampleName(), []);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [kickId, setKickId] = useState<string | null>(null);
 
@@ -221,7 +225,7 @@ export function RoomLobbyScreen({ onStart }: { onStart: (room: Room) => void }) 
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder={t('rooms.yourName')}
+              placeholder={newNamePh}
               maxLength={24}
               aria-label={t('rooms.yourName')}
             />

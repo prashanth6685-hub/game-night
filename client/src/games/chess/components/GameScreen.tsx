@@ -1,6 +1,6 @@
 // Chess game screen: setup phase (player names) -> play phase (board + panel).
 // The mutable chess.js engine lives in a ref; `version` state forces re-renders.
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import type { Color, Move, PieceSymbol, Square } from 'chess.js';
 import { useI18n } from '../../../i18n/index.ts';
@@ -11,6 +11,7 @@ import { track } from '../../../shared/analytics.ts';
 import { getStatus, type ChessStatus } from '../logic/status.ts';
 import ChessBoard, { type LegalTarget } from './ChessBoard.tsx';
 import './chess.css';
+import { randomExampleNames } from '../../../shared/names.ts';
 
 type Phase = 'setup' | 'play';
 type PromotionPiece = 'q' | 'r' | 'b' | 'n';
@@ -55,6 +56,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [whiteNameInput, setWhiteNameInput] = useState('');
   const [blackNameInput, setBlackNameInput] = useState('');
+  const namePhs = useMemo(() => randomExampleNames(2), []);
   const [version, setVersion] = useState(0);
   const [orientation, setOrientation] = useState<'w' | 'b'>('w');
   const [selected, setSelected] = useState<string | null>(null);
@@ -282,7 +284,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
             <input
               value={whiteNameInput}
               onChange={(e) => setWhiteNameInput(e.target.value)}
-              placeholder={t('chess.player1')}
+              placeholder={namePhs[0] ?? ''}
               maxLength={24}
               autoComplete="off"
             />
@@ -292,7 +294,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
             <input
               value={blackNameInput}
               onChange={(e) => setBlackNameInput(e.target.value)}
-              placeholder={t('chess.player2')}
+              placeholder={namePhs[1] ?? ''}
               maxLength={24}
               autoComplete="off"
             />

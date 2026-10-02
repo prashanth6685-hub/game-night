@@ -1,6 +1,6 @@
 // Snake & Ladder game screen: setup (player count, names, extra-turn rule)
 // then play (dice roll, boustrophedon board, snakes/ladders, win flow).
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameScreenProps } from '../../types.ts';
 import { useI18n } from '../../../i18n/index.ts';
 import { Avatar, Button, Card, ConfirmDialog } from '../../../shared/ui/index.ts';
@@ -15,6 +15,7 @@ import {
 import { applyRoll, createGame } from '../logic/game.ts';
 import type { SlPlayer, SlState } from '../logic/game.ts';
 import './snakeladder.css';
+import { randomExampleNames } from '../../../shared/names.ts';
 
 type Phase = 'setup' | 'play';
 
@@ -46,6 +47,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   const [phase, setPhase] = useState<Phase>('setup');
   const [playerCount, setPlayerCount] = useState(2);
   const [names, setNames] = useState<string[]>(['', '', '', '']);
+  const namePhs = useMemo(() => randomExampleNames(playerCount), [playerCount]);
   const [extraTurnOnSix, setExtraTurnOnSix] = useState(true);
 
   const [game, setGame] = useState<SlState | null>(null);
@@ -202,7 +204,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                 <input
                   id={`sl-name-${i}`}
                   value={names[i] ?? ''}
-                  placeholder={`${t('snakeladder.player')} ${i + 1}`}
+                  placeholder={namePhs[i] ?? ''}
                   maxLength={20}
                   autoComplete="off"
                   onChange={(e) =>
