@@ -39,7 +39,14 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '16kb' }));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'game-night', version: VERSION, time: new Date().toISOString() });
+  res.json({
+    ok: true,
+    service: 'game-night',
+    version: VERSION,
+    time: new Date().toISOString(),
+    // Boolean only — the key value itself is never exposed.
+    gemini: (process.env.GEMINI_API_KEY ?? '').trim().length > 0,
+  });
 });
 
 app.get('/api/games', (_req, res) => {
