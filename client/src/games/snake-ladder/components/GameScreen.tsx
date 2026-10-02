@@ -1,6 +1,6 @@
 // Snake & Ladder game screen: setup (player count, names, extra-turn rule)
 // then play (dice roll, boustrophedon board, snakes/ladders, win flow).
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import type { GameScreenProps } from '../../types.ts';
 import { useI18n } from '../../../i18n/index.ts';
 import { Avatar, Button, Card, ConfirmDialog } from '../../../shared/ui/index.ts';
@@ -18,8 +18,14 @@ import { applyRoll, createGame } from '../logic/game.ts';
 import type { SlPlayer, SlState } from '../logic/game.ts';
 import './snakeladder.css';
 import { randomExampleNames } from '../../../shared/names.ts';
-import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
-import { initialSlMpState } from '../multiplayer/MpGame.tsx';
+import { initialSlMpState } from '../logic/mpState.ts';
+
+// The multi-phone lobby (QR code, room polling) is only needed when the
+// user picks that mode — load it on demand so the base game chunk stays
+// small and never depends on the multiplayer module graph to open.
+const MpLobby = lazy(() =>
+  import('../../../shared/mp/MpLobby.tsx').then((m) => ({ default: m.MpLobby })),
+);
 
 type Phase = 'setup' | 'play';
 
@@ -246,6 +252,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     const hostName = (names[0] ?? '').trim() || (namePhs[0] ?? 'Player 1');
     return (
       <div className="sl-wrap">
+        <Suspense fallback={<p style={{ textAlign: 'center' }}>{t('common.loading')}</p>}>
         <MpLobby
           gameId="snake-ladder"
           hostName={hostName}
@@ -263,6 +270,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
           }}
           onCancel={() => setShowMpLobby(false)}
         />
+        </Suspense>
       </div>
     );
   }

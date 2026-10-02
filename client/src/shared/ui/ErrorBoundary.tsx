@@ -1,6 +1,8 @@
 // Error boundary for lazily-loaded game screens: if a game chunk fails to
 // load (stale cached page after a new deploy is the classic cause on
 // phones), show a friendly retry/reload panel instead of a blank screen.
+// The underlying error message is shown in small text so a failure can be
+// reported and diagnosed instead of guessed at.
 
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
@@ -9,18 +11,18 @@ import { Button, Card } from './index.ts';
 
 interface InnerProps {
   children: ReactNode;
-  fallback: ReactNode;
+  fallback: (error: Error | null) => ReactNode;
 }
 
 interface InnerState {
-  hasError: boolean;
+  error: Error | null;
 }
 
 class BoundaryInner extends Component<InnerProps, InnerState> {
-  state: InnerState = { hasError: false };
+  state: InnerState = { error: null };
 
-  static getDerivedStateFromError(): InnerState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): InnerState {
+    return { error };
   }
 
   componentDidCatch(error: Error, _info: ErrorInfo): void {
@@ -29,26 +31,44 @@ class BoundaryInner extends Component<InnerProps, InnerState> {
   }
 
   render(): ReactNode {
-    if (this.state.hasError) return this.props.fallback;
+    if (this.state.error) return this.props.fallback(this.state.error);
     return this.props.children;
   }
 }
 
 export function GameErrorBoundary({ children }: { children: ReactNode }) {
   const { t } = useI18n();
-  const fallback = (
-    <Card>
-      <p style={{ textAlign: 'center', fontWeight: 700 }}>
-        {t('errors.gameLoad')}
-      </p>
-      <Button
-        variant="primary"
-        fullWidth
-        onClick={() => window.location.reload()}
-      >
-        {t('common.retry')}
-      </Button>
-    </Card>
+  return (
+    <BoundaryInner
+      fallback={(error) => (
+        <Card>
+          <p style={{ textAlign: 'center', fontWeight: 700 }}>
+            {t('errors.gameLoad')}
+          </p>
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => window.location.reload()}
+          >
+            {t('common.retry')}
+          </Button>
+          {error && (
+            <p
+              style={{
+                textAlign: 'center',
+                color: '#b0a89f',
+                fontSize: '0.72rem',
+                marginTop: '0.6rem',
+                wordBreak: 'break-word',
+              }}
+            >
+              {error.name}: {error.message}
+            </p>
+          )}
+        </Card>
+      )}
+    >
+      {children}
+    </BoundaryInner>
   );
-  return <BoundaryInner fallback={fallback}>{children}</BoundaryInner>;
 }

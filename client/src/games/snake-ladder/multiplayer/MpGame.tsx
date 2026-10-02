@@ -15,36 +15,12 @@ import type { SlDifficulty } from '../logic/board.ts';
 import { applyRoll, createGame } from '../logic/game.ts';
 import type { SlPlayer, SlState } from '../logic/game.ts';
 import { BoardOverlay, squareCenterPct } from '../components/BoardOverlay.tsx';
+import { initialSlMpState } from '../logic/mpState.ts';
+import type { SlMpConfig, SlMpState } from '../logic/mpState.ts';
+
+export { initialSlMpState };
+export type { SlMpConfig, SlMpState };
 import '../components/snakeladder.css';
-
-export interface SlMpConfig {
-  extraTurnOnSix: boolean;
-  difficulty: SlDifficulty;
-}
-
-export interface SlMpState {
-  game: SlState;
-  dice: number;
-  lastRoll: number | null;
-  lastEvent: 'ladder' | 'snake' | 'stay' | 'six' | null;
-  lastMoverSeat: number | null;
-  /** Square landed on before the snake/ladder applied (for the glide). */
-  lastFrom: number | null;
-}
-
-export function initialSlMpState(
-  names: string[],
-  config: SlMpConfig,
-): SlMpState {
-  return {
-    game: createGame(names, config.extraTurnOnSix, config.difficulty),
-    dice: 6,
-    lastRoll: null,
-    lastEvent: null,
-    lastMoverSeat: null,
-    lastFrom: null,
-  };
-}
 
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
