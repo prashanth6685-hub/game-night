@@ -15,9 +15,20 @@ const DICTS_BASE: Record<Lang, Record<string, unknown>> = { en, te, hi };
 // (one fragment per area, e.g. tambola.en.json) are deep-merged into English.
 // This lets contributors add strings without merge conflicts; te/hi fall back
 // to English for any key they don't translate.
-const fragmentModules = import.meta.glob('./fragments/*.en.json', {
-  eager: true,
-}) as Record<string, { default: Record<string, unknown> }>;
+// NOTE: imported explicitly — esbuild (unlike Vite) has no import.meta.glob.
+import charadesFrag from './fragments/charades.en.json';
+import chessFrag from './fragments/chess.en.json';
+import snakeladderFrag from './fragments/snakeladder.en.json';
+import tambolaFrag from './fragments/tambola.en.json';
+import uiFrag from './fragments/ui.en.json';
+
+const fragmentDicts: Record<string, unknown>[] = [
+  charadesFrag as Record<string, unknown>,
+  chessFrag as Record<string, unknown>,
+  snakeladderFrag as Record<string, unknown>,
+  tambolaFrag as Record<string, unknown>,
+  uiFrag as Record<string, unknown>,
+];
 
 function deepMerge(
   target: Record<string, unknown>,
@@ -41,8 +52,8 @@ function deepMerge(
 }
 
 const enMerged = deepMerge({}, DICTS_BASE.en);
-for (const mod of Object.values(fragmentModules)) {
-  deepMerge(enMerged, mod.default);
+for (const frag of fragmentDicts) {
+  deepMerge(enMerged, frag);
 }
 
 const DICTS: Record<Lang, Record<string, unknown>> = {
