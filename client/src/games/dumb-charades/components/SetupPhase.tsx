@@ -192,28 +192,6 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
       </h1>
 
       <Card>
-        <span className="ch-section-label">{t('charades.category')}</span>
-        <div className="ch-catgrid">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c.id as string}
-              type="button"
-              className="ch-cat"
-              aria-pressed={category === c.id}
-              onClick={() => {
-                playSound('click');
-                clearCustom();
-                setCategory(c.id);
-              }}
-            >
-              <span className="ch-cat-icon">{c.icon}</span>
-              <span>{catLabel(c.id as string)}</span>
-            </button>
-          ))}
-        </div>
-      </Card>
-
-      <Card>
         <span className="ch-section-label">{t('charades.customCategory')}</span>
         <div className="ch-custom-row">
           <input
@@ -261,6 +239,29 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
           </div>
         ) : null}
       </Card>
+
+      <Card>
+        <span className="ch-section-label">{t('charades.category')}</span>
+        <div className="ch-catgrid">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.id as string}
+              type="button"
+              className="ch-cat"
+              aria-pressed={category === c.id}
+              onClick={() => {
+                playSound('click');
+                clearCustom();
+                setCategory(c.id);
+              }}
+            >
+              <span className="ch-cat-icon">{c.icon}</span>
+              <span>{catLabel(c.id as string)}</span>
+            </button>
+          ))}
+        </div>
+      </Card>
+
 
       <Card>
         <span className="ch-section-label">{t('charades.language')}</span>

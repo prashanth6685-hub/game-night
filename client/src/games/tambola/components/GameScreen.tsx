@@ -21,18 +21,18 @@ import type { Caller } from '../logic/caller.ts';
 import type { PatternId } from '../logic/patterns.ts';
 import { SetupScreen } from './SetupScreen.tsx';
 import type { TambolaSetup } from './SetupScreen.tsx';
+import { CallerPanel } from './CallerPanel.tsx';
+import { HostFlow } from '../multiplayer/HostFlow.tsx';
 import { TicketCard } from './TicketCard.tsx';
 import { ClaimDialog } from './ClaimDialog.tsx';
 import type { ClaimInput } from './ClaimDialog.tsx';
 import './tambola.css';
 
-type Phase = 'setup' | 'play';
+type Phase = 'setup' | 'play' | 'multi';
 
 interface Claim extends ClaimInput {
   at: number; // called.length when approved, for stable ordering
 }
-
-const AUTO_INTERVALS = [3, 5, 10, 15];
 
 function nameKeyFor(id: PatternId): string {
   switch (id) {
@@ -67,9 +67,6 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   const callerRef = useRef<Caller | null>(null);
 
   const calledSet = useMemo(() => new Set(called), [called]);
-  const current = called.length > 0 ? called[called.length - 1] : null;
-  const previous = called.slice(-6, -1).reverse();
-  const allCalled = called.length >= 90;
 
   const playerName = (i: number): string =>
     t('tambola.playerName').replace('{n}', String(i + 1));
@@ -77,6 +74,12 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     t('tambola.ticketLabel').replace('{n}', String(i + 1));
 
   const startGame = (cfg: TambolaSetup): void => {
+    if (cfg.mode === 'multi-phone') {
+      // Host creates a QR room; players join from their own phones.
+      setConfig(cfg);
+      setPhase('multi');
+      return;
+    }
     const all = generateTickets(cfg.playerCount * cfg.ticketsPerPlayer);
     const per: Ticket[][] = [];
     for (let p = 0; p < cfg.playerCount; p++) {
@@ -163,116 +166,38 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     return <SetupScreen onStart={startGame} />;
   }
 
+  if (phase === 'multi') {
+    return <HostFlow config={config} onFinish={onFinish} />;
+  }
+
   return (
     <div className="tm">
-      <Card>
-        <div
-          className="tm-current"
-          key={current ?? 'none'}
-          aria-live="polite"
-        >
-          {current === null ? (
-            <span className="tm-current__waiting">{t('tambola.waitingFirstCall')}</span>
-          ) : (
-            <span className="tm-current__num tm-pop">{current}</span>
-          )}
-        </div>
-        <div className="tm-meta">
-          <div className="tm-prev">
-            <span className="tm-prev__label">{t('tambola.previousLabel')}</span>
-            {previous.map((n) => (
-              <span className="tm-prev__chip" key={n}>
-                {n}
-              </span>
-            ))}
-          </div>
-          <div className="tm-count">
-            {t('tambola.numbersCalledLabel')}:{' '}
-            <strong>
-              {t('tambola.calledCount').replace('{called}', String(called.length))}
-            </strong>
-          </div>
-        </div>
-        <div className="tm-actions">
-          <Button
-            variant="primary"
-            size="lg"
-            fullWidth
-            disabled={allCalled}
-            onClick={doCall}
-          >
-            {t('tambola.callNumber')}
-          </Button>
-          {allCalled ? (
-            <p className="tm-center">{t('tambola.allNumbersCalled')}</p>
-          ) : null}
-        </div>
-        <div className="tm-autocall">
-          <Button
-            variant={auto ? 'primary' : 'secondary'}
-            size="sm"
-            onClick={() => {
-              setAuto((v) => !v);
-              setPaused(false);
-            }}
-          >
-            {t('tambola.autoCall')}: {auto ? t('settings.on') : t('settings.off')}
-          </Button>
-          <select
-            className="tm-select tm-select--sm"
-            aria-label={t('tambola.intervalLabel')}
-            value={config.intervalSec}
-            onChange={(e) =>
-              setConfig({ ...config, intervalSec: Number(e.target.value) })
-            }
-          >
-            {AUTO_INTERVALS.map((s) => (
-              <option key={s} value={s}>
-                {t('tambola.intervalSeconds').replace('{n}', String(s))}
-              </option>
-            ))}
-          </select>
-          {auto ? (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setPaused((v) => !v)}
-            >
-              {paused ? t('tambola.resume') : t('tambola.pause')}
+      <CallerPanel
+        called={called}
+        auto={auto}
+        paused={paused}
+        intervalSec={config.intervalSec}
+        onCall={doCall}
+        onToggleAuto={() => {
+          setAuto((v) => !v);
+          setPaused(false);
+        }}
+        onTogglePause={() => setPaused((v) => !v)}
+        onIntervalChange={(s) => setConfig({ ...config, intervalSec: s })}
+        actionRow={
+          <div className="tm-row">
+            <Button variant="secondary" size="sm" onClick={() => setResetOpen(true)}>
+              {t('tambola.reset')}
             </Button>
-          ) : null}
-        </div>
-        <div className="tm-row">
-          <Button variant="secondary" size="sm" onClick={() => setResetOpen(true)}>
-            {t('tambola.reset')}
-          </Button>
-          <Button variant="success" size="sm" onClick={() => setClaimOpen(true)}>
-            {t('tambola.claimWin')}
-          </Button>
-          <Button variant="danger" size="sm" onClick={() => setEndOpen(true)}>
-            {t('tambola.endGame')}
-          </Button>
-        </div>
-      </Card>
-
-      <Card title={t('tambola.boardLabel')}>
-        <div className="tm-board" aria-label={t('tambola.boardLabel')}>
-          {Array.from({ length: 90 }, (_, i) => {
-            const n = i + 1;
-            const isCalled = calledSet.has(n);
-            return (
-              <span
-                key={n}
-                className={
-                  'tm-board__cell' + (isCalled ? ' tm-board__cell--called' : '')
-                }
-              >
-                {n}
-              </span>
-            );
-          })}
-        </div>
-      </Card>
+            <Button variant="success" size="sm" onClick={() => setClaimOpen(true)}>
+              {t('tambola.claimWin')}
+            </Button>
+            <Button variant="danger" size="sm" onClick={() => setEndOpen(true)}>
+              {t('tambola.endGame')}
+            </Button>
+          </div>
+        }
+      />
 
       <Card title={t('tambola.ticketsLabel')}>
         <div className="tm-players">

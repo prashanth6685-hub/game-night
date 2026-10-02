@@ -7,7 +7,10 @@ import { Button, Card } from '../../../shared/ui/index.ts';
 import { PATTERNS } from '../logic/patterns.ts';
 import type { PatternId } from '../logic/patterns.ts';
 
+export type TambolaMode = 'same-device' | 'multi-phone';
+
 export interface TambolaSetup {
+  mode: TambolaMode;
   playerCount: number;
   ticketsPerPlayer: number;
   enabled: PatternId[];
@@ -73,6 +76,7 @@ function Stepper({
 
 export function SetupScreen({ onStart }: SetupScreenProps) {
   const { t } = useI18n();
+  const [mode, setMode] = useState<TambolaMode>('same-device');
   const [playerCount, setPlayerCount] = useState(4);
   const [ticketsPerPlayer, setTicketsPerPlayer] = useState(1);
   const [enabled, setEnabled] = useState<Record<PatternId, boolean>>({
@@ -93,24 +97,57 @@ export function SetupScreen({ onStart }: SetupScreenProps) {
     <div className="tm">
       <Card title={t('tambola.setupTitle')}>
         <div className="tm-setup">
-          <Stepper
-            label={t('tambola.players')}
-            value={playerCount}
-            min={MIN_PLAYERS}
-            max={MAX_PLAYERS}
-            onChange={setPlayerCount}
-            decreaseLabel={t('tambola.stepperDecrease')}
-            increaseLabel={t('tambola.stepperIncrease')}
-          />
-          <Stepper
-            label={t('tambola.ticketsPerPlayer')}
-            value={ticketsPerPlayer}
-            min={MIN_TICKETS}
-            max={MAX_TICKETS}
-            onChange={setTicketsPerPlayer}
-            decreaseLabel={t('tambola.stepperDecrease')}
-            increaseLabel={t('tambola.stepperIncrease')}
-          />
+          <div className="tm-claim__label">{t('tambola.modeLabel')}</div>
+          <div className="tmq-mode" role="radiogroup" aria-label={t('tambola.modeLabel')}>
+            <label className={'tmq-mode__card' + (mode === 'same-device' ? ' tmq-mode__card--on' : '')}>
+              <input
+                type="radio"
+                name="tm-mode"
+                checked={mode === 'same-device'}
+                onChange={() => setMode('same-device')}
+              />
+              <span className="tmq-mode__icon" aria-hidden>
+                📱
+              </span>
+              <span className="tmq-mode__name">{t('tambola.modeSameDevice')}</span>
+              <span className="tmq-mode__desc">{t('tambola.modeSameDeviceDesc')}</span>
+            </label>
+            <label className={'tmq-mode__card' + (mode === 'multi-phone' ? ' tmq-mode__card--on' : '')}>
+              <input
+                type="radio"
+                name="tm-mode"
+                checked={mode === 'multi-phone'}
+                onChange={() => setMode('multi-phone')}
+              />
+              <span className="tmq-mode__icon" aria-hidden>
+                📲
+              </span>
+              <span className="tmq-mode__name">{t('tambola.modeMultiPhone')}</span>
+              <span className="tmq-mode__desc">{t('tambola.modeMultiPhoneDesc')}</span>
+            </label>
+          </div>
+          {mode === 'same-device' ? (
+            <>
+              <Stepper
+                label={t('tambola.players')}
+                value={playerCount}
+                min={MIN_PLAYERS}
+                max={MAX_PLAYERS}
+                onChange={setPlayerCount}
+                decreaseLabel={t('tambola.stepperDecrease')}
+                increaseLabel={t('tambola.stepperIncrease')}
+              />
+              <Stepper
+                label={t('tambola.ticketsPerPlayer')}
+                value={ticketsPerPlayer}
+                min={MIN_TICKETS}
+                max={MAX_TICKETS}
+                onChange={setTicketsPerPlayer}
+                decreaseLabel={t('tambola.stepperDecrease')}
+                increaseLabel={t('tambola.stepperIncrease')}
+              />
+            </>
+          ) : null}
           <div className="tm-claim__label">{t('tambola.patternsLabel')}</div>
           <div className="tm-checklist">
             {PATTERNS.map((p) => (
@@ -142,6 +179,7 @@ export function SetupScreen({ onStart }: SetupScreenProps) {
             fullWidth
             onClick={() =>
               onStart({
+                mode,
                 playerCount,
                 ticketsPerPlayer,
                 enabled: PATTERNS.map((p) => p.id).filter((id) => enabled[id]),
@@ -149,7 +187,7 @@ export function SetupScreen({ onStart }: SetupScreenProps) {
               })
             }
           >
-            {t('tambola.startGame')}
+            {mode === 'multi-phone' ? t('tambola.createRoom') : t('tambola.startGame')}
           </Button>
         </div>
       </Card>

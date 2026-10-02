@@ -5,6 +5,19 @@ import express from 'express';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
 import { charadesGenerateHandler } from './charades.ts';
+import {
+  callHandler,
+  claimHandler,
+  createRoomHandler,
+  dabHandler,
+  endHandler,
+  eventsHandler,
+  hostStateHandler,
+  joinHandler,
+  roomInfoHandler,
+  startHandler,
+  verifyHandler,
+} from './tambolaRooms.ts';
 
 const PORT = Number(process.env.PORT ?? 10000);
 const VERSION = '1.0.0';
@@ -35,6 +48,19 @@ app.get('/api/games', (_req, res) => {
 
 // AI-generated custom word lists for Dumb Charades (no persistence).
 app.post('/api/charades/generate', charadesGenerateHandler());
+
+// Multi-phone Tambola rooms (SSE + POSTs, in-memory, ephemeral).
+app.post('/api/tambola/rooms', createRoomHandler);
+app.get('/api/tambola/rooms/:code', roomInfoHandler);
+app.get('/api/tambola/rooms/:code/state', hostStateHandler);
+app.get('/api/tambola/rooms/:code/events', eventsHandler);
+app.post('/api/tambola/rooms/:code/join', joinHandler);
+app.post('/api/tambola/rooms/:code/start', startHandler);
+app.post('/api/tambola/rooms/:code/call', callHandler);
+app.post('/api/tambola/rooms/:code/dab', dabHandler);
+app.post('/api/tambola/rooms/:code/claims', claimHandler);
+app.post('/api/tambola/rooms/:code/claims/:claimId/verify', verifyHandler);
+app.post('/api/tambola/rooms/:code/end', endHandler);
 
 if (existsSync(STATIC_DIR)) {
   app.use(

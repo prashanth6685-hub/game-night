@@ -23,6 +23,8 @@ export const GENERATION_TIMEOUT_MS = 25000;
 export const RATE_LIMIT_PER_HOUR = 20;
 
 const POLLINATIONS_URL = 'https://text.pollinations.ai/';
+const GEMINI_URL =
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const LANG_INSTRUCTIONS: Record<GenLanguage, string> = {
   en: 'English',
@@ -212,10 +214,47 @@ async function attemptGet(
 }
 
 /**
+ * Google Gemini (free tier) — used when GEMINI_API_KEY is set.
+ * Reliable primary; the key stays server-side (x-goog-api-key header).
+ */
+async function attemptGemini(
+  fetchImpl: FetchLike,
+  prompt: string,
+  apiKey: string,
+  signal: AbortSignal,
+): Promise<string[]> {
+  try {
+    const res = await fetchImpl(GEMINI_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.9, maxOutputTokens: 1500 },
+      }),
+      signal,
+    });
+    if (!res.ok) return [];
+    const data = JSON.parse(await res.text()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
+    const text =
+      data.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text ?? '')
+        .join('') ?? '';
+    return sanitizeWords(text);
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Call the LLM and return sanitized words.
  * Never throws: any failure (timeout, network, bad response) → [].
- * Tries POST first, then falls back to GET (different upstream code path —
- * the free tier is flaky and one path may work while the other 500s).
+ * Provider order: Gemini (if GEMINI_API_KEY is set — reliable free tier),
+ * then Pollinations POST, then Pollinations GET.
  */
 export async function generateWords(
   input: GenerateInput,
@@ -225,6 +264,17 @@ export async function generateWords(
   const timer = setTimeout(() => controller.abort(), GENERATION_TIMEOUT_MS);
   try {
     const prompt = buildPrompt(input);
+    const geminiKey = (process.env.GEMINI_API_KEY ?? '').trim();
+    if (geminiKey) {
+      const words = await attemptGemini(
+        fetchImpl,
+        prompt,
+        geminiKey,
+        controller.signal,
+      );
+      if (words.length > 0) return words;
+      // Gemini failed — fall through to the free fallback below.
+    }
     let words = await attemptPost(fetchImpl, prompt, controller.signal);
     if (words.length === 0 && !controller.signal.aborted) {
       words = await attemptGet(fetchImpl, prompt, controller.signal);

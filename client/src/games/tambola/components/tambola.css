@@ -295,3 +295,199 @@
   border-radius: var(--radius-sm);
   background: var(--surface-2);
 }
+
+/* ---- Multi-phone (QR rooms) ---- */
+
+.tmq-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tmq-mode__card {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
+  padding: 14px 10px;
+  border: 2px solid var(--surface-2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  background: var(--surface-1);
+}
+
+.tmq-mode__card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tmq-mode__card--on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-1));
+}
+
+.tmq-mode__icon {
+  font-size: 1.75rem;
+}
+
+.tmq-mode__name {
+  font-weight: 700;
+}
+
+.tmq-mode__desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.tmq-center {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.tmq-lobby {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  text-align: center;
+}
+
+.tmq-qr {
+  background: #fff;
+  padding: 12px;
+  border-radius: var(--radius);
+  max-width: 100%;
+  height: auto;
+}
+
+.tmq-code {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.35em;
+  text-indent: 0.35em;
+  color: var(--accent);
+}
+
+.tmq-players {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.tmq-players__item {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
+.tmq-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  font-size: 1.1rem;
+  border: 2px solid var(--surface-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.tmq-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tmq-playerhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tmq-playerhead__name {
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+/* Player ticket: big tappable cells. Called = green + ✓ badge (color AND
+   icon, never color alone). Dabbed = gold ring on top. */
+.tmq-ticket .tm-cell {
+  min-height: 56px;
+  font-size: 1.2rem;
+}
+
+button.tmq-cell {
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-family: inherit;
+  position: relative;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.tmq-cell:active {
+  transform: scale(0.96);
+}
+
+.tmq-cell--called {
+  background: var(--success);
+  color: #fff;
+  font-weight: 800;
+}
+
+.tmq-cell__check {
+  position: absolute;
+  top: 2px;
+  right: 5px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.tmq-cell--dabbed {
+  outline: 3px solid #f59e0b;
+  outline-offset: -3px;
+}
+
+.tmq-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tmq-legend__item--called {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.tmq-legend__item--dabbed {
+  color: #b45309;
+  font-weight: 700;
+}
+
+.tmq-claims {
+  display: grid;
+  gap: 10px;
+}
+
+.tmq-claims__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.tmq-pending {
+  font-weight: 600;
+}

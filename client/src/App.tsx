@@ -17,6 +17,10 @@ import {
   useRoom,
 } from './shared/rooms/Rooms.tsx';
 
+const TambolaJoinScreen = lazy(
+  () => import('./games/tambola/multiplayer/JoinScreen.tsx'),
+);
+
 export function nav(path: string): void {
   if (location.hash === `#${path}`) {
     window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -32,11 +36,15 @@ type Route =
   | { name: 'rooms-new' }
   | { name: 'rooms-join' }
   | { name: 'room'; code: string }
+  | { name: 'tambola-join'; code: string }
   | { name: 'settings' }
   | { name: 'about' };
 
 function parseRoute(): Route {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
+  if (parts[0] === 'tambola' && parts[1] === 'join' && parts[2]) {
+    return { name: 'tambola-join', code: parts[2].toUpperCase() };
+  }
   if (parts[0] === 'game' && parts[1]) return { name: 'game', id: parts[1] };
   if (parts[0] === 'rooms' && parts[1] === 'new') return { name: 'rooms-new' };
   if (parts[0] === 'rooms' && parts[1] === 'join') return { name: 'rooms-join' };
@@ -361,6 +369,11 @@ export default function App() {
         {route.name === 'rooms-join' && <JoinRoomScreen onJoined={(c) => nav(`/rooms/${c}`)} />}
         {route.name === 'room' && (
           <RoomLobbyScreen onStart={(r) => nav(`/game/${r.gameId}`)} />
+        )}
+        {route.name === 'tambola-join' && (
+          <Suspense fallback={<Spinner />}>
+            <TambolaJoinScreen code={route.code} />
+          </Suspense>
         )}
         {route.name === 'settings' && <SettingsPage />}
         {route.name === 'about' && <AboutPage />}

@@ -249,6 +249,56 @@ test('generateWords returns [] when both POST and GET fail', async () => {
   assert.equal(n, 2);
 });
 
+test('generateWords uses Gemini when GEMINI_API_KEY is set', async () => {
+  const prev = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = 'test-key-123';
+  try {
+    const calls: { url: string; headers?: Record<string, string>; body?: string }[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      calls.push({ url, headers: init?.headers, body: init?.body });
+      return {
+        ok: true,
+        text: async () =>
+          JSON.stringify({
+            candidates: [
+              { content: { parts: [{ text: '["Alpha", "Beta"]' }] } },
+            ],
+          }),
+      };
+    };
+    const words = await generateWords(baseInput, fetch);
+    assert.deepEqual(words, ['Alpha', 'Beta']);
+    assert.equal(calls.length, 1);
+    assert.match(calls[0]?.url ?? '', /generativelanguage\.googleapis\.com/);
+    assert.equal(calls[0]?.headers?.['x-goog-api-key'], 'test-key-123');
+    assert.match(calls[0]?.body ?? '', /cricketers/);
+  } finally {
+    if (prev === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = prev;
+  }
+});
+
+test('generateWords falls back to Pollinations when Gemini fails', async () => {
+  const prev = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = 'test-key-123';
+  try {
+    const urls: string[] = [];
+    const fetch: FetchLike = async (url) => {
+      urls.push(url);
+      if (url.includes('googleapis.com')) {
+        return { ok: false, text: async () => '' };
+      }
+      return { ok: true, text: async () => '["Fallback"]' };
+    };
+    assert.deepEqual(await generateWords(baseInput, fetch), ['Fallback']);
+    assert.ok(urls[0]?.includes('googleapis.com'));
+    assert.ok(urls[1]?.includes('pollinations.ai'));
+  } finally {
+    if (prev === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = prev;
+  }
+});
+
 // ---------- express handler ----------
 
 class FakeRes {

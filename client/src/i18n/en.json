@@ -1,1 +1,103 @@
-{"about":{"body":"Game Night is a family-friendly collection of casual games. Play together on one device — online multiplayer is on the roadmap.","title":"About"},"ads":{"label":"Advertisement"},"app":{"name":"Game Night","tagline":"Pick a game. Gather around. Play."},"common":{"back":"Back","cancel":"Cancel","chooseAnother":"Choose Another Game","close":"Close","confirm":"Confirm","home":"Home","loading":"Loading…","name":"Name","newGame":"New Game","no":"No","ok":"OK","playAgain":"Play Again","playersLabel":"Players","restart":"Restart","save":"Save","start":"Start","yes":"Yes"},"errors":{"generic":"Something went wrong. Please try again.","offline":"You appear to be offline."},"games":{"chess":{"desc":"The classic two-player strategy game.","name":"Chess"},"dumb-charades":{"desc":"Act it out — movies, songs, people & more.","name":"Dumb Charades"},"snake-ladder":{"desc":"Race to 100 — dodge snakes, climb ladders.","name":"Snake & Ladder"},"tambola":{"desc":"Classic Tambola / Housie number calling.","name":"Tambola"}},"lobby":{"comingSoon":"More games coming soon","playNow":"Play Now","players":"Players","subtitle":"Casual games for family & friends","title":"Choose a Game","unlimited":"{n}+"},"nav":{"about":"About","games":"Games","home":"Home","rooms":"Rooms","settings":"Settings"},"results":{"title":"Game Over","winner":"Winner"},"rooms":{"create":"Create Room","host":"Host","join":"Join Room","leave":"Leave Room","notReady":"Not Ready","onlineSoon":"Online multiplayer is coming soon — local rooms work today.","players":"Players","ready":"Ready","remove":"Remove","roomCode":"Room Code","selectGame":"Select Game","startGame":"Start Game","title":"Game Rooms","yourName":"Your Name"},"settings":{"animations":"Animations","appearance":"Appearance","language":"Language","off":"Off","on":"On","sound":"Sound","theme":"Theme","themeDark":"Dark","themeLight":"Light","themeSystem":"System","title":"Settings"}}
+{
+  "about": {
+    "body": "Game Night is a family-friendly collection of casual games. Play together on one device — online multiplayer is on the roadmap.",
+    "title": "About"
+  },
+  "ads": {
+    "label": "Advertisement"
+  },
+  "app": {
+    "name": "Game Night",
+    "tagline": "Pick a game. Gather around. Play."
+  },
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "chooseAnother": "Choose Another Game",
+    "close": "Close",
+    "confirm": "Confirm",
+    "home": "Home",
+    "loading": "Loading…",
+    "name": "Name",
+    "newGame": "New Game",
+    "no": "No",
+    "ok": "OK",
+    "playAgain": "Play Again",
+    "playersLabel": "Players",
+    "restart": "Restart",
+    "save": "Save",
+    "start": "Start",
+    "yes": "Yes",
+    "retry": "Try again"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "offline": "You appear to be offline."
+  },
+  "games": {
+    "chess": {
+      "desc": "The classic two-player strategy game.",
+      "name": "Chess"
+    },
+    "dumb-charades": {
+      "desc": "Act it out — movies, songs, people & more.",
+      "name": "Dumb Charades"
+    },
+    "snake-ladder": {
+      "desc": "Race to 100 — dodge snakes, climb ladders.",
+      "name": "Snake & Ladder"
+    },
+    "tambola": {
+      "desc": "Classic Tambola / Housie number calling.",
+      "name": "Tambola"
+    }
+  },
+  "lobby": {
+    "comingSoon": "More games coming soon",
+    "playNow": "Play Now",
+    "players": "Players",
+    "subtitle": "Casual games for family & friends",
+    "title": "Choose a Game",
+    "unlimited": "{n}+"
+  },
+  "nav": {
+    "about": "About",
+    "games": "Games",
+    "home": "Home",
+    "rooms": "Rooms",
+    "settings": "Settings"
+  },
+  "results": {
+    "title": "Game Over",
+    "winner": "Winner"
+  },
+  "rooms": {
+    "create": "Create Room",
+    "host": "Host",
+    "join": "Join Room",
+    "leave": "Leave Room",
+    "notReady": "Not Ready",
+    "onlineSoon": "Online multiplayer is coming soon — local rooms work today.",
+    "players": "Players",
+    "ready": "Ready",
+    "remove": "Remove",
+    "roomCode": "Room Code",
+    "selectGame": "Select Game",
+    "startGame": "Start Game",
+    "title": "Game Rooms",
+    "yourName": "Your Name"
+  },
+  "settings": {
+    "animations": "Animations",
+    "appearance": "Appearance",
+    "language": "Language",
+    "off": "Off",
+    "on": "On",
+    "sound": "Sound",
+    "theme": "Theme",
+    "themeDark": "Dark",
+    "themeLight": "Light",
+    "themeSystem": "System",
+    "title": "Settings"
+  }
+}
