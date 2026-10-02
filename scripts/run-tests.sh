@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-mapfile -t files < <(find client/src server/src -name '*.test.ts' 2>/dev/null | sort)
+mapfile -t files < <(find client/src server/src shared -name '*.test.ts' 2>/dev/null | sort)
 if [ "${#files[@]}" -eq 0 ]; then
   echo "no test files found"
   exit 1

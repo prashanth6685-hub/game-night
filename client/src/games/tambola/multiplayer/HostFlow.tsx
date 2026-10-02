@@ -16,8 +16,8 @@ import {
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import { checkPattern, patternCells } from '../logic/patterns.ts';
-import type { PatternId } from '../logic/patterns.ts';
+import { checkPattern, patternCells } from '../../../../../shared/tambola/patterns.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 import { CallerPanel } from '../components/CallerPanel.tsx';
 import { TicketCard } from '../components/TicketCard.tsx';
 import type { TambolaSetup } from '../components/SetupScreen.tsx';

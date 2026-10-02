@@ -2,8 +2,8 @@
 // Called numbers auto-highlight (green + ✓, never color alone); the player
 // taps any number to dab it (their own mark, gold ring). Big touch targets.
 
-import type { Ticket } from '../logic/ticket.ts';
-import type { PatternId } from '../logic/patterns.ts';
+import type { Ticket } from '../../../../../shared/tambola/ticket.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 import { useI18n } from '../../../i18n/index.ts';
 import { Button, Card } from '../../../shared/ui/index.ts';
 

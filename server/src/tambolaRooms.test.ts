@@ -23,8 +23,8 @@ import {
   verifyClaim,
 } from './tambolaRooms.ts';
 import type { SseClient, TambolaRoom } from './tambolaRooms.ts';
-import { ticketKey } from '../../client/src/games/tambola/logic/ticket.ts';
-import { checkPattern } from '../../client/src/games/tambola/logic/patterns.ts';
+import { ticketKey } from '../../shared/tambola/ticket.ts';
+import { checkPattern } from '../../shared/tambola/patterns.ts';
 
 function makeRoom(): TambolaRoom {
   return createRoom(['early-five', 'top-line', 'full-house']);

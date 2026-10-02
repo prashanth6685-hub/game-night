@@ -1,8 +1,8 @@
 // Client API for multi-phone Tambola rooms: plain POSTs + SSE via EventSource.
 // All errors surface as Error with the server's message (or a fallback).
 
-import type { Ticket } from '../logic/ticket.ts';
-import type { PatternId } from '../logic/patterns.ts';
+import type { Ticket } from '../../../../../shared/tambola/ticket.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 
 export type MpRoomStatus = 'lobby' | 'playing' | 'ended';
 export type MpClaimStatus = 'pending' | 'approved' | 'rejected';

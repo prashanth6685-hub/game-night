@@ -10,8 +10,8 @@ import {
   Spinner,
   useToast,
 } from '../../../shared/ui/index.ts';
-import type { Ticket } from '../logic/ticket.ts';
-import type { PatternId } from '../logic/patterns.ts';
+import type { Ticket } from '../../../../../shared/tambola/ticket.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 import { TambolaMp, openRoomEvents } from './api.ts';
 import type { MpClaimStatus, RoomResults } from './api.ts';
 import { PlayerTicket } from './PlayerTicket.tsx';

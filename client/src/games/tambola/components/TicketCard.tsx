@@ -2,8 +2,8 @@
 // automatically (host-verified marking — players don't tap cells).
 // `outline` marks the cells relevant to a claim in the verify view.
 
-import type { Ticket } from '../logic/ticket.ts';
-import type { PatternCell } from '../logic/patterns.ts';
+import type { Ticket } from '../../../../../shared/tambola/ticket.ts';
+import type { PatternCell } from '../../../../../shared/tambola/patterns.ts';
 
 interface TicketCardProps {
   ticket: Ticket;

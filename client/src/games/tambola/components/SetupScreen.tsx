@@ -4,8 +4,8 @@
 import { useState } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
 import { Button, Card } from '../../../shared/ui/index.ts';
-import { PATTERNS } from '../logic/patterns.ts';
-import type { PatternId } from '../logic/patterns.ts';
+import { PATTERNS } from '../../../../../shared/tambola/patterns.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 
 export type TambolaMode = 'same-device' | 'multi-phone';
 

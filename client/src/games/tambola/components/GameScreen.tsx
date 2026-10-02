@@ -14,11 +14,11 @@ import {
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import { generateTickets } from '../logic/ticket.ts';
-import type { Ticket } from '../logic/ticket.ts';
+import { generateTickets } from '../../../../../shared/tambola/ticket.ts';
+import type { Ticket } from '../../../../../shared/tambola/ticket.ts';
 import { createCaller } from '../logic/caller.ts';
 import type { Caller } from '../logic/caller.ts';
-import type { PatternId } from '../logic/patterns.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
 import { SetupScreen } from './SetupScreen.tsx';
 import type { TambolaSetup } from './SetupScreen.tsx';
 import { CallerPanel } from './CallerPanel.tsx';

@@ -5,9 +5,9 @@
 import { useMemo, useState } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
 import { Button, Modal } from '../../../shared/ui/index.ts';
-import { checkPattern, patternCells } from '../logic/patterns.ts';
-import type { PatternId } from '../logic/patterns.ts';
-import type { Ticket } from '../logic/ticket.ts';
+import { checkPattern, patternCells } from '../../../../../shared/tambola/patterns.ts';
+import type { PatternId } from '../../../../../shared/tambola/patterns.ts';
+import type { Ticket } from '../../../../../shared/tambola/ticket.ts';
 import { TicketCard } from './TicketCard.tsx';
 
 export interface ClaimInput {

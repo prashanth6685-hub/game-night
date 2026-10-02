@@ -11,10 +11,10 @@
 
 import type { Request, Response } from 'express';
 import { randomBytes } from 'node:crypto';
-import { generateTicket, ticketKey } from '../../client/src/games/tambola/logic/ticket.ts';
-import type { Ticket } from '../../client/src/games/tambola/logic/ticket.ts';
-import { checkPattern, PATTERNS } from '../../client/src/games/tambola/logic/patterns.ts';
-import type { PatternId } from '../../client/src/games/tambola/logic/patterns.ts';
+import { generateTicket, ticketKey } from '../../shared/tambola/ticket.ts';
+import type { Ticket } from '../../shared/tambola/ticket.ts';
+import { checkPattern, PATTERNS } from '../../shared/tambola/patterns.ts';
+import type { PatternId } from '../../shared/tambola/patterns.ts';
 import { createRateLimiter } from './charades.ts';
 
 export const ROOM_CODE_LEN = 5;
