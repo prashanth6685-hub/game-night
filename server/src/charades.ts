@@ -19,7 +19,7 @@ export interface GenerateInput {
 export const DEFAULT_COUNT = 30;
 export const MAX_COUNT = 40;
 export const MAX_ITEM_LEN = 100;
-export const GENERATION_TIMEOUT_MS = 25000;
+export const GENERATION_TIMEOUT_MS = 45000;
 export const RATE_LIMIT_PER_HOUR = 20;
 
 const POLLINATIONS_URL = 'https://text.pollinations.ai/';
@@ -172,7 +172,7 @@ export interface FetchLike {
       body?: string;
       signal?: AbortSignal;
     },
-  ): Promise<{ ok: boolean; text(): Promise<string> }>;
+  ): Promise<{ ok: boolean; status: number; text(): Promise<string> }>;
 }
 
 async function attemptPost(
@@ -190,9 +190,13 @@ async function attemptPost(
       }),
       signal,
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`[charades] pollinations POST status=${res.status}`);
+      return [];
+    }
     return sanitizeWords(await res.text());
-  } catch {
+  } catch (err) {
+    console.error(`[charades] pollinations POST error: ${err instanceof Error ? err.name : 'unknown'}`);
     return [];
   }
 }
@@ -206,9 +210,13 @@ async function attemptGet(
     const res = await fetchImpl(POLLINATIONS_URL + encodeURIComponent(prompt), {
       signal,
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error(`[charades] pollinations GET status=${res.status}`);
+      return [];
+    }
     return sanitizeWords(await res.text());
-  } catch {
+  } catch (err) {
+    console.error(`[charades] pollinations GET error: ${err instanceof Error ? err.name : 'unknown'}`);
     return [];
   }
 }
@@ -250,11 +258,51 @@ async function attemptGemini(
   }
 }
 
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    const t = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = (): void => {
+      clearTimeout(t);
+      resolve();
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+type AttemptFn = (
+  fetchImpl: FetchLike,
+  prompt: string,
+  signal: AbortSignal,
+) => Promise<string[]>;
+
+/** Run one provider attempt up to twice (transient upstream 500s are common). */
+async function attemptWithRetry(
+  fn: AttemptFn,
+  fetchImpl: FetchLike,
+  prompt: string,
+  signal: AbortSignal,
+): Promise<string[]> {
+  for (let i = 0; i < 2; i += 1) {
+    if (signal.aborted) return [];
+    const words = await fn(fetchImpl, prompt, signal);
+    if (words.length > 0) return words;
+    if (i === 0 && !signal.aborted) await sleep(1500, signal);
+  }
+  return [];
+}
+
 /**
  * Call the LLM and return sanitized words.
  * Never throws: any failure (timeout, network, bad response) → [].
  * Provider order: Gemini (if GEMINI_API_KEY is set — reliable free tier),
- * then Pollinations POST, then Pollinations GET.
+ * then Pollinations POST (with one retry), then Pollinations GET (with one retry).
  */
 export async function generateWords(
   input: GenerateInput,
@@ -275,9 +323,19 @@ export async function generateWords(
       if (words.length > 0) return words;
       // Gemini failed — fall through to the free fallback below.
     }
-    let words = await attemptPost(fetchImpl, prompt, controller.signal);
+    let words = await attemptWithRetry(
+      attemptPost,
+      fetchImpl,
+      prompt,
+      controller.signal,
+    );
     if (words.length === 0 && !controller.signal.aborted) {
-      words = await attemptGet(fetchImpl, prompt, controller.signal);
+      words = await attemptWithRetry(
+        attemptGet,
+        fetchImpl,
+        prompt,
+        controller.signal,
+      );
     }
     return words;
   } catch {
@@ -313,14 +371,14 @@ export function charadesGenerateHandler(deps: CharadesDeps = {}) {
       const words = await generateWords(parsed.value, deps.fetchImpl);
       if (words.length === 0) {
         res.status(503).json({
-          error: 'generation failed, try again or pick a preset category',
+          error: 'The word service is busy — please try again in a moment.',
         });
         return;
       }
       res.json({ words, category: parsed.value.category });
     } catch {
       res.status(503).json({
-        error: 'generation failed, try again or pick a preset category',
+        error: 'The word service is busy — please try again in a moment.',
       });
     }
   };

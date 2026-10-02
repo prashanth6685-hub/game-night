@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode, MouseEvent } from 'react';
+import { useI18n } from '../../i18n/index.ts';
 
 export interface ModalProps {
   open: boolean;
@@ -10,6 +11,7 @@ export interface ModalProps {
 
 export function Modal({ open, onClose, title, children }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   // Escape closes; autofocus the panel when it opens.
   useEffect(() => {
@@ -38,6 +40,14 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         aria-label={title}
         className="ui-modal-panel"
       >
+        <button
+          type="button"
+          className="ui-modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
+          ✕
+        </button>
         {title ? <h2 className="ui-modal-title">{title}</h2> : null}
         {children}
       </div>

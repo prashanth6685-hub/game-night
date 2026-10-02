@@ -36,9 +36,11 @@ function fmt(template: string, vars: Record<string, string | number>): string {
   return out;
 }
 
-/** Players sorted by position, leader first. */
-function ranked(game: SlState): SlPlayer[] {
-  return [...game.players].sort((a, b) => b.pos - a.pos);
+/** Players sorted by position, leader first (keeps original index for bot flags). */
+function ranked(game: SlState): Array<{ p: SlPlayer; i: number }> {
+  return game.players
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => b.p.pos - a.p.pos);
 }
 
 export default function GameScreen({ onFinish }: GameScreenProps) {
@@ -49,6 +51,11 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   const [names, setNames] = useState<string[]>(['', '', '', '']);
   const namePhs = useMemo(() => randomExampleNames(playerCount), [playerCount]);
   const [extraTurnOnSix, setExtraTurnOnSix] = useState(true);
+  const [vsComputer, setVsComputer] = useState(false);
+  /** Bot names for seats 2-4 in vs-computer mode (stable for the setup screen). */
+  const botNames = useMemo(() => randomExampleNames(3), []);
+  /** Player indices that are computer-controlled in the running game. */
+  const [botIdx, setBotIdx] = useState<Set<number>>(new Set());
 
   const [game, setGame] = useState<SlState | null>(null);
   const [dice, setDice] = useState(6);
@@ -79,27 +86,41 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   }
 
   function startGame(): void {
-    const resolved = Array.from({ length: playerCount }, (_, i) => {
-      const raw = (names[i] ?? '').trim();
-      return raw === '' ? `${t('snakeladder.player')} ${i + 1}` : raw;
-    });
+    let resolved: string[];
+    let bots: Set<number>;
+    if (vsComputer) {
+      const raw = (names[0] ?? '').trim();
+      const human = raw === '' ? `${t('snakeladder.player')} 1` : raw;
+      resolved = [human, ...botNames];
+      bots = new Set([1, 2, 3]);
+    } else {
+      resolved = Array.from({ length: playerCount }, (_, i) => {
+        const raw = (names[i] ?? '').trim();
+        return raw === '' ? `${t('snakeladder.player')} ${i + 1}` : raw;
+      });
+      bots = new Set();
+    }
+    setBotIdx(bots);
     setGame(createGame(resolved, extraTurnOnSix));
     setMessage(null);
     setHighlight(null);
     setDice(6);
     setPhase('play');
-    track('game_started', { game: 'snake-ladder' });
+    track('game_started', {
+      game: 'snake-ladder',
+      vsComputer,
+    });
     playSound('click');
   }
 
   function finishWithWinner(state: SlState): void {
     const leaders = ranked(state);
     const leader = leaders[0];
-    const name = leader ? leader.name : t('snakeladder.endGame');
+    const name = leader ? leader.p.name : t('snakeladder.endGame');
     onFinish({
       title: fmt(t('snakeladder.winner'), { name }),
       winner: name,
-      lines: leaders.map((p) => ({ label: p.name, value: String(p.pos) })),
+      lines: leaders.map(({ p }) => ({ label: p.name, value: String(p.pos) })),
     });
   }
 
@@ -177,44 +198,98 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       <div className="sl-wrap">
         <Card title={t('snakeladder.setupTitle')}>
           <div className="sl-setup">
-            <div className="sl-field">
-              <span className="sl-label">{t('snakeladder.playerCount')}</span>
-              <div
-                className="sl-count-row"
-                role="group"
-                aria-label={t('snakeladder.playerCount')}
+            <div
+              className="sl-count-row"
+              role="group"
+              aria-label={t('snakeladder.vsComputer')}
+            >
+              <Button
+                variant={!vsComputer ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => setVsComputer(false)}
               >
-                {[2, 3, 4].map((n) => (
-                  <Button
-                    key={n}
-                    variant={playerCount === n ? 'primary' : 'secondary'}
-                    size="md"
-                    onClick={() => setPlayerCount(n)}
-                  >
-                    {n}
-                  </Button>
-                ))}
-              </div>
+                👥 {t('snakeladder.passAndPlay')}
+              </Button>
+              <Button
+                variant={vsComputer ? 'primary' : 'secondary'}
+                size="md"
+                onClick={() => setVsComputer(true)}
+              >
+                🖥 {t('snakeladder.vsComputer')}
+              </Button>
             </div>
-            {Array.from({ length: playerCount }, (_, i) => (
-              <div className="sl-field" key={i}>
-                <label className="sl-label" htmlFor={`sl-name-${i}`}>
-                  {t('snakeladder.playerName')} {i + 1}
-                </label>
-                <input
-                  id={`sl-name-${i}`}
-                  value={names[i] ?? ''}
-                  placeholder={namePhs[i] ?? ''}
-                  maxLength={20}
-                  autoComplete="off"
-                  onChange={(e) =>
-                    setNames((prev) =>
-                      prev.map((v, j) => (j === i ? e.target.value : v)),
-                    )
-                  }
-                />
-              </div>
-            ))}
+            {vsComputer ? (
+              <>
+                <div className="sl-field">
+                  <label className="sl-label" htmlFor="sl-name-0">
+                    {t('snakeladder.playerName')} 1
+                  </label>
+                  <input
+                    id="sl-name-0"
+                    value={names[0] ?? ''}
+                    placeholder={namePhs[0] ?? ''}
+                    maxLength={20}
+                    autoComplete="off"
+                    onChange={(e) =>
+                      setNames((prev) =>
+                        prev.map((v, j) => (j === 0 ? e.target.value : v)),
+                      )
+                    }
+                  />
+                </div>
+                <div className="sl-field">
+                  <span className="sl-label">{t('snakeladder.computerOpponents')}</span>
+                  <div className="sl-bots">
+                    {botNames.map((b, k) => (
+                      <span key={k} className="sl-chip">
+                        🤖 {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="sl-field">
+                  <span className="sl-label">{t('snakeladder.playerCount')}</span>
+                  <div
+                    className="sl-count-row"
+                    role="group"
+                    aria-label={t('snakeladder.playerCount')}
+                  >
+                    {[2, 3, 4].map((n) => (
+                      <Button
+                        key={n}
+                        variant={playerCount === n ? 'primary' : 'secondary'}
+                        size="md"
+                        onClick={() => setPlayerCount(n)}
+                      >
+                        {n}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                {Array.from({ length: playerCount }, (_, i) => (
+                  <div className="sl-field" key={i}>
+                    <label className="sl-label" htmlFor={`sl-name-${i}`}>
+                      {t('snakeladder.playerName')} {i + 1}
+                    </label>
+                    <input
+                      id={`sl-name-${i}`}
+                      value={names[i] ?? ''}
+                      placeholder={namePhs[i] ?? ''}
+                      maxLength={20}
+                      autoComplete="off"
+                      onChange={(e) =>
+                        setNames((prev) =>
+                          prev.map((v, j) => (j === i ? e.target.value : v)),
+                        )
+                      }
+                    />
+                  </div>
+                ))}
+              </>
+            )}
             <label className="sl-toggle">
               <input
                 type="checkbox"
@@ -233,8 +308,23 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   }
 
   const current = game.players[game.turn];
+  const isBotTurn =
+    current !== undefined && botIdx.has(game.turn) && game.winner === null;
+
+  // Computer players roll automatically after a short "thinking" pause.
+  // The effect re-fires after every move, so extra turns chain naturally.
+  const rollRef = useRef(handleRoll);
+  rollRef.current = handleRoll;
+  useEffect(() => {
+    if (!isBotTurn || rolling) return;
+    const id = window.setTimeout(() => rollRef.current(), 1100);
+    return () => window.clearTimeout(id);
+  }, [isBotTurn, rolling, game]);
+
   if (!current) return null;
-  const turnText = fmt(t('snakeladder.turnOf'), { name: current.name });
+  const turnText = fmt(t('snakeladder.turnOf'), {
+    name: isBotTurn ? `🤖 ${current.name}` : current.name,
+  });
 
   return (
     <div className="sl-wrap">
@@ -258,18 +348,25 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       </div>
 
       <div className="sl-message" aria-live="polite">
-        {message ?? (rolling ? t('snakeladder.rolling') : ' ')}
+        {message ??
+          (isBotTurn
+            ? fmt(t('snakeladder.botThinking'), { name: current.name })
+            : rolling
+              ? t('snakeladder.rolling')
+              : '\u00a0')}
       </div>
 
       <Button
         variant="primary"
         size="lg"
         fullWidth
-        disabled={rolling || game.winner !== null}
+        disabled={rolling || game.winner !== null || isBotTurn}
         onClick={handleRoll}
         ariaLabel={`${t('snakeladder.rollDice')}: ${turnText}`}
       >
-        {t('snakeladder.rollDice')}
+        {isBotTurn
+          ? fmt(t('snakeladder.botThinking'), { name: current.name })
+          : t('snakeladder.rollDice')}
       </Button>
 
       <div className="sl-board">
@@ -322,14 +419,14 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       </div>
 
       <div className="sl-standings" aria-label={t('snakeladder.positions')}>
-        {ranked(game).map((p, idx) => (
+        {ranked(game).map(({ p, i }, idx) => (
           <span
             key={`${idx}-${p.name}`}
             className="sl-chip"
             style={{ borderColor: p.color }}
           >
             <i style={{ backgroundColor: p.color }} aria-hidden />
-            {p.name}: {p.pos}
+            {botIdx.has(i) ? '🤖 ' : ''}{p.name}: {p.pos}
           </span>
         ))}
       </div>

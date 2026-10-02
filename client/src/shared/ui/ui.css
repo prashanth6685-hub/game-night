@@ -108,6 +108,7 @@
 }
 
 .ui-modal-panel {
+  position: relative;
   background-color: var(--surface);
   color: var(--text);
   border-radius: var(--radius);
@@ -323,4 +324,28 @@
   color: var(--text);
   font-weight: 600;
   line-height: 1.4;
+}
+
+.ui-modal-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-modal-close:active {
+  transform: scale(0.92);
 }

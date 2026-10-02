@@ -1,0 +1,365 @@
+/* Bingo: bingo-hall feel — bold column headers, ball display, daub pops. */
+
+.bg-wrap {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.bg-desc {
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.bg-muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 8px 0 12px;
+}
+
+.bg-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.bg-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.bg-field input {
+  min-height: var(--tap);
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--surface-2);
+  padding: 0 12px;
+  font-size: 1rem;
+  font-family: inherit;
+  background: var(--surface);
+  color: inherit;
+}
+
+.bg-count-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bg-seats {
+  list-style: none;
+  margin: 0 0 4px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.bg-seat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
+.bg-seat__tag {
+  margin-left: auto;
+}
+
+/* ---- Top bar ---- */
+
+.bg-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bg-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.bg-topbar__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bg-winbanner {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary), #7c3aed);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: bg-pop 0.3s ease-out;
+}
+
+/* ---- Caller ---- */
+
+.bg-caller {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bg-ball {
+  flex: 0 0 auto;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 32% 30%, #fbbf24, #d97706 68%, #92400e);
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.45), inset 0 -6px 12px rgba(0, 0, 0, 0.2);
+  animation: bg-pop 0.28s ease-out;
+}
+
+@keyframes bg-pop {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+.bg-ball__letter {
+  font-size: 1.5rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.bg-ball__num {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.bg-ball__waiting {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0 12px;
+  line-height: 1.3;
+}
+
+.bg-caller__meta {
+  flex: 1;
+  display: grid;
+  gap: 8px;
+}
+
+.bg-recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+}
+
+.bg-chip {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+
+.bg-count {
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+/* ---- Human card ---- */
+
+.bg-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 10px;
+}
+
+.bg-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.bg-colhead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.bg-colhead--B { background: #dc2626; }
+.bg-colhead--I { background: #0ea5e9; }
+.bg-colhead--N { background: #16a34a; }
+.bg-colhead--G { background: #d97706; }
+.bg-colhead--O { background: #7c3aed; }
+
+.bg-cell {
+  position: relative;
+  min-height: 60px;
+  border-radius: 12px;
+  border: 2px solid var(--surface-2);
+  background: var(--surface);
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--primary-ink);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease;
+}
+
+.bg-cell:active {
+  transform: scale(0.94);
+}
+
+.bg-cell--called {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.25);
+}
+
+.bg-cell:disabled {
+  cursor: default;
+}
+
+.bg-cell--free {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+/* Daubed: filled bingo-dauber circle with a pop. */
+.bg-cell--daubed {
+  border-color: transparent;
+  background: transparent;
+}
+
+.bg-cell__num {
+  position: relative;
+  z-index: 1;
+  line-height: 1;
+}
+
+.bg-cell--daubed .bg-cell__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f472b6, #db2777 70%);
+  color: #fff;
+  font-size: 1.1rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.5);
+  animation: bg-pop 0.25s ease-out;
+}
+
+.bg-cell--free .bg-cell__num {
+  width: auto;
+  height: auto;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: radial-gradient(circle at 35% 30%, #fbbf24, #d97706 70%);
+  font-size: 0.65rem;
+}
+
+/* ---- Claim ---- */
+
+.bg-claims {
+  display: grid;
+  gap: 8px;
+}
+
+.bg-claimhint {
+  margin: 0;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.bg-claim {
+  animation: bg-pulse 1s ease-in-out infinite;
+}
+
+@keyframes bg-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+/* ---- Bot cards ---- */
+
+.bg-bots {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.bg-bot {
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.bg-bot__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bg-bot__name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bg-bot__count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.bg-minigrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+}
+
+.bg-minicell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--muted);
+  opacity: 0.5;
+}
+
+.bg-minicell--on {
+  background: var(--success);
+  border-color: var(--success);
+  opacity: 1;
+}
+
+.bg-bot__prog {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}

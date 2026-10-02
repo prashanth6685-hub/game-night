@@ -167,6 +167,7 @@ test('createRateLimiter allows N hits then blocks, window expiry re-allows', () 
 function mockFetch(responseText: string, ok = true): FetchLike {
   return async () => ({
     ok,
+    status: ok ? 200 : 500,
     text: async () => responseText,
   });
 }
@@ -200,7 +201,7 @@ test('generateWords posts a JSON body with messages and model', async () => {
   const spy: FetchLike = async (url, init) => {
     seenUrl = url;
     seenBody = init?.body ?? '';
-    return { ok: true, text: async () => '["x"]' };
+    return { ok: true, status: 200, text: async () => '["x"]' };
   };
   await generateWords(baseInput, spy);
   assert.equal(seenUrl, 'https://text.pollinations.ai/');
@@ -217,15 +218,17 @@ test('generateWords falls back to GET when POST fails', async () => {
   const calls: { url: string; method?: string }[] = [];
   const fetch: FetchLike = async (url, init) => {
     calls.push({ url, method: init?.method });
-    if (init?.method === 'POST') return { ok: false, text: async () => '' };
-    return { ok: true, text: async () => '["Alpha", "Beta"]' };
+    if (init?.method === 'POST') return { ok: false, status: 500, text: async () => '' };
+    return { ok: true, status: 200, text: async () => '["Alpha", "Beta"]' };
   };
   const words = await generateWords(baseInput, fetch);
   assert.deepEqual(words, ['Alpha', 'Beta']);
-  assert.equal(calls.length, 2);
+  // POST is retried once before falling back to GET.
+  assert.equal(calls.length, 3);
   assert.equal(calls[0]?.method, 'POST');
-  assert.match(calls[1]?.url ?? '', /^https:\/\/text\.pollinations\.ai\//);
-  assert.notEqual(calls[1]?.method, 'POST');
+  assert.equal(calls[1]?.method, 'POST');
+  assert.match(calls[2]?.url ?? '', /^https:\/\/text\.pollinations\.ai\//);
+  assert.notEqual(calls[2]?.method, 'POST');
 });
 
 test('generateWords falls back to GET when POST throws', async () => {
@@ -233,7 +236,7 @@ test('generateWords falls back to GET when POST throws', async () => {
   const fetch: FetchLike = async () => {
     n += 1;
     if (n === 1) throw new Error('network down');
-    return { ok: true, text: async () => '["Gamma"]' };
+    return { ok: true, status: 200, text: async () => '["Gamma"]' };
   };
   assert.deepEqual(await generateWords(baseInput, fetch), ['Gamma']);
   assert.equal(n, 2);
@@ -243,10 +246,11 @@ test('generateWords returns [] when both POST and GET fail', async () => {
   let n = 0;
   const fetch: FetchLike = async () => {
     n += 1;
-    return { ok: false, text: async () => '' };
+    return { ok: false, status: 500, text: async () => '' };
   };
   assert.deepEqual(await generateWords(baseInput, fetch), []);
-  assert.equal(n, 2);
+  // POST retried once, then GET retried once.
+  assert.equal(n, 4);
 });
 
 test('generateWords uses Gemini when GEMINI_API_KEY is set', async () => {
@@ -258,6 +262,7 @@ test('generateWords uses Gemini when GEMINI_API_KEY is set', async () => {
       calls.push({ url, headers: init?.headers, body: init?.body });
       return {
         ok: true,
+        status: 200,
         text: async () =>
           JSON.stringify({
             candidates: [
@@ -286,9 +291,9 @@ test('generateWords falls back to Pollinations when Gemini fails', async () => {
     const fetch: FetchLike = async (url) => {
       urls.push(url);
       if (url.includes('googleapis.com')) {
-        return { ok: false, text: async () => '' };
+        return { ok: false, status: 500, text: async () => '' };
       }
-      return { ok: true, text: async () => '["Fallback"]' };
+      return { ok: true, status: 200, text: async () => '["Fallback"]' };
     };
     assert.deepEqual(await generateWords(baseInput, fetch), ['Fallback']);
     assert.ok(urls[0]?.includes('googleapis.com'));
@@ -346,7 +351,7 @@ test('handler returns 503 with the friendly message when generation fails', asyn
   assert.equal(res.statusCode, 503);
   assert.equal(
     (res.payload as { error: string }).error,
-    'generation failed, try again or pick a preset category',
+    'The word service is busy \u2014 please try again in a moment.',
   );
 });
 
