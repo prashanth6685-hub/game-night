@@ -56,8 +56,11 @@ const result = await build({
 
 // Static assets -> dist. index.html's dev entry (./main.tsx) is rewritten to
 // the hashed production bundle so the page actually boots.
-const mainJs = readdirSync(outdir).find((f) => /^main-[A-Z0-9]+\.js$/.test(f));
-if (!mainJs) throw new Error('production bundle not found in ' + outdir);
+const entryOutput = Object.entries(result.metafile.outputs).find(([, out]) =>
+  (out.entryPoint ?? '').endsWith('src/main.tsx'),
+);
+if (!entryOutput) throw new Error('production bundle not found in build outputs');
+const mainJs = entryOutput[0].split('/').pop();
 const html = readFileSync(join(root, 'public', 'index.html'), 'utf8').replace(
   './main.tsx',
   `./${mainJs}`,

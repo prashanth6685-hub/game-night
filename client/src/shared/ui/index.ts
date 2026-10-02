@@ -21,3 +21,4 @@ export { ConfirmDialog } from './ConfirmDialog.tsx';
 export type { ConfirmDialogProps } from './ConfirmDialog.tsx';
 export { ErrorMessage } from './ErrorMessage.tsx';
 export type { ErrorMessageProps } from './ErrorMessage.tsx';
+export { GameErrorBoundary } from './ErrorBoundary.tsx';

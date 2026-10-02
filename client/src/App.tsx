@@ -9,7 +9,7 @@ import { useSettings } from './shared/settings.tsx';
 import type { Theme } from './shared/settings.tsx';
 import { AdSlot } from './shared/ads/Ads.tsx';
 import { track } from './shared/analytics.ts';
-import { Button, Card, ErrorMessage, Spinner, GameHeader } from './shared/ui/index.ts';
+import { Button, Card, ErrorMessage, Spinner, GameHeader, GameErrorBoundary } from './shared/ui/index.ts';
 import {
   CreateRoomScreen,
   JoinRoomScreen,
@@ -187,17 +187,19 @@ function GameRoute({ id }: { id: string }) {
         onRestart={() => setRestartKey((k) => k + 1)}
       />
       <Suspense fallback={<Spinner />}>
-        <Comp
-          key={restartKey}
-          onFinish={(r) => {
-            track('game_completed', { game: id });
-            setResult(r);
-          }}
-          onExit={() => {
-            track('game_abandoned', { game: id });
-            goHome();
-          }}
-        />
+        <GameErrorBoundary>
+          <Comp
+            key={restartKey}
+            onFinish={(r) => {
+              track('game_completed', { game: id });
+              setResult(r);
+            }}
+            onExit={() => {
+              track('game_abandoned', { game: id });
+              goHome();
+            }}
+          />
+        </GameErrorBoundary>
       </Suspense>
     </div>
   );
@@ -253,14 +255,16 @@ function MpGameRoute({ gameId, code }: { gameId: string; code: string }) {
         onBack={goHome}
       />
       <Suspense fallback={<Spinner />}>
-        <Comp
-          code={code}
-          onFinish={(r) => {
-            track('game_completed', { game: gameId, mode: 'multi-phone' });
-            setResult(r);
-          }}
-          onExit={goHome}
-        />
+        <GameErrorBoundary>
+          <Comp
+            code={code}
+            onFinish={(r) => {
+              track('game_completed', { game: gameId, mode: 'multi-phone' });
+              setResult(r);
+            }}
+            onExit={goHome}
+          />
+        </GameErrorBoundary>
       </Suspense>
     </div>
   );
@@ -447,12 +451,16 @@ export default function App() {
         )}
         {route.name === 'tambola-join' && (
           <Suspense fallback={<Spinner />}>
-            <TambolaJoinScreen code={route.code} />
+            <GameErrorBoundary>
+              <TambolaJoinScreen code={route.code} />
+            </GameErrorBoundary>
           </Suspense>
         )}
         {route.name === 'join' && (
           <Suspense fallback={<Spinner />}>
-            <JoinGameScreen code={route.code} />
+            <GameErrorBoundary>
+              <JoinGameScreen code={route.code} />
+            </GameErrorBoundary>
           </Suspense>
         )}
         {route.name === 'mp' && <MpGameRoute gameId={route.gameId} code={route.code} />}

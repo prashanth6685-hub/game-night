@@ -1,6 +1,8 @@
 // Game Night service worker — offline-first for the app shell and game chunks.
 // Same-device games work fully offline after the first visit.
-const VERSION = 'gn-v1';
+// Bump VERSION on every deploy-affecting change: phones holding the old
+// cache get a clean slate instead of stale game chunks that fail to load.
+const VERSION = 'gn-v2';
 const CORE = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -16,7 +18,8 @@ self.addEventListener('activate', (event) => {
 });
 
 // Navigation: network-first, fall back to cached index.html (hash routing keeps it working).
-// Static assets: cache-first, then network.
+// JS/CSS (hashed chunks): network-first so a new deploy is picked up
+// immediately; cache is only the offline fallback. Other assets: cache-first.
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
@@ -25,6 +28,18 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(() => caches.match('./index.html')),
+    );
+    return;
+  }
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(VERSION).then((cache) => cache.put(request, copy));
+          return res;
+        })
+        .catch(() => caches.match(request)),
     );
     return;
   }

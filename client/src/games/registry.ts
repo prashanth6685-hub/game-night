@@ -16,32 +16,74 @@ export interface RegisteredGame {
   loadMp?: () => Promise<{ default: ComponentType<MpScreenProps> }>;
 }
 
+type AnyScreenModule =
+  | { default: ComponentType<GameScreenProps> }
+  | { default: ComponentType<MpScreenProps> };
+
+/**
+ * Load a game chunk, recovering from the classic stale-deploy failure:
+ * after a new deploy, a phone holding the old page requests chunk files
+ * that no longer exist. Retry once, then reload the page (fresh index +
+ * fresh chunks) — guarded so it can never loop.
+ */
+function withRetry<T extends AnyScreenModule>(load: () => Promise<T>): () => Promise<T> {
+  return async () => {
+    try {
+      const mod = await load();
+      try {
+        sessionStorage.removeItem('gn-chunk-reload');
+      } catch {
+        // ignore
+      }
+      return mod;
+    } catch (err) {
+      let last = 0;
+      try {
+        last = Number(sessionStorage.getItem('gn-chunk-reload') ?? 0);
+      } catch {
+        // ignore
+      }
+      if (Date.now() - last > 30000) {
+        try {
+          sessionStorage.setItem('gn-chunk-reload', String(Date.now()));
+        } catch {
+          // ignore
+        }
+        window.location.reload();
+        // Keep Suspense waiting while the page reloads.
+        return new Promise<T>(() => {});
+      }
+      throw err;
+    }
+  };
+}
+
 export const GAMES: RegisteredGame[] = [
   {
     meta: bingoMeta,
-    load: () => import('./bingo/index.ts'),
-    loadMp: () => import('./bingo/multiplayer/MpGame.tsx'),
+    load: withRetry(() => import('./bingo/index.ts')),
+    loadMp: withRetry(() => import('./bingo/multiplayer/MpGame.tsx')),
   },
   {
     meta: dumbCharadesMeta,
-    load: () => import('./dumb-charades/index.ts'),
-    loadMp: () => import('./dumb-charades/multiplayer/MpGame.tsx'),
+    load: withRetry(() => import('./dumb-charades/index.ts')),
+    loadMp: withRetry(() => import('./dumb-charades/multiplayer/MpGame.tsx')),
   },
   {
     meta: ludoMeta,
-    load: () => import('./ludo/index.ts'),
-    loadMp: () => import('./ludo/multiplayer/MpGame.tsx'),
+    load: withRetry(() => import('./ludo/index.ts')),
+    loadMp: withRetry(() => import('./ludo/multiplayer/MpGame.tsx')),
   },
-  { meta: tambolaMeta, load: () => import('./tambola/index.ts') },
+  { meta: tambolaMeta, load: withRetry(() => import('./tambola/index.ts')) },
   {
     meta: snakeLadderMeta,
-    load: () => import('./snake-ladder/index.ts'),
-    loadMp: () => import('./snake-ladder/multiplayer/MpGame.tsx'),
+    load: withRetry(() => import('./snake-ladder/index.ts')),
+    loadMp: withRetry(() => import('./snake-ladder/multiplayer/MpGame.tsx')),
   },
   {
     meta: chessMeta,
-    load: () => import('./chess/index.ts'),
-    loadMp: () => import('./chess/multiplayer/MpGame.tsx'),
+    load: withRetry(() => import('./chess/index.ts')),
+    loadMp: withRetry(() => import('./chess/multiplayer/MpGame.tsx')),
   },
 ];
 
