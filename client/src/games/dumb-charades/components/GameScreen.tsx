@@ -18,6 +18,13 @@ export interface CharadesSetup {
   category: CharadesCategory | 'random';
   difficulty: CharadesDifficulty | 'all';
   timerSecs: number;
+  /**
+   * AI-generated custom category (via POST /api/charades/generate).
+   * When present, PlayPhase builds the deck from these words instead of
+   * the preset packs. Session-only — never persisted.
+   */
+  customCategory?: string;
+  customWords?: string[];
 }
 
 export interface CharadesTeams {

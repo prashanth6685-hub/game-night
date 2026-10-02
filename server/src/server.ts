@@ -4,6 +4,7 @@
 import express from 'express';
 import { join } from 'node:path';
 import { existsSync } from 'node:fs';
+import { charadesGenerateHandler } from './charades.ts';
 
 const PORT = Number(process.env.PORT ?? 10000);
 const VERSION = '1.0.0';
@@ -22,6 +23,7 @@ const GAMES = [
 
 const app = express();
 app.disable('x-powered-by');
+app.use(express.json({ limit: '16kb' }));
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'game-night', version: VERSION, time: new Date().toISOString() });
@@ -30,6 +32,9 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/games', (_req, res) => {
   res.json({ games: GAMES });
 });
+
+// AI-generated custom word lists for Dumb Charades (no persistence).
+app.post('/api/charades/generate', charadesGenerateHandler());
 
 if (existsSync(STATIC_DIR)) {
   app.use(

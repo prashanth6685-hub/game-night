@@ -7,6 +7,7 @@ export type AnalyticsEvent =
   | 'game_completed'
   | 'game_abandoned'
   | 'category_selected'
+  | 'custom_category_generated'
   | 'language_selected'
   | 'session_start';
 

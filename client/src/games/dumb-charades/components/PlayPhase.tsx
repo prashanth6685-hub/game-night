@@ -22,7 +22,7 @@ import {
   nextTeamIndex,
   winnerIndex,
 } from '../logic/turns.ts';
-import type { CharadesItem } from '../data/types.ts';
+import type { CharadesItem, CharadesDifficulty } from '../data/types.ts';
 import type { GameResult } from '../../types.ts';
 import type { CharadesSetup, CharadesTeams } from './GameScreen.tsx';
 
@@ -40,14 +40,24 @@ export default function PlayPhase({ setup, teams, onFinish }: PlayPhaseProps) {
   const { t } = useI18n();
 
   // The deck lives in a ref: created once per game, never rebuilt by renders.
+  // A custom AI-generated word list takes precedence over the preset packs.
   const deckRef = useRef<Deck | null>(null);
   if (deckRef.current === null) {
+    const customItems: CharadesItem[] =
+      setup.customWords && setup.customWords.length > 0
+        ? setup.customWords.map((name) => ({
+            name,
+            difficulty: 'medium' as CharadesDifficulty,
+          }))
+        : [];
     deckRef.current = createDeck(
-      buildPool(PACKS, {
-        language: setup.language,
-        category: setup.category,
-        difficulty: setup.difficulty,
-      }),
+      customItems.length > 0
+        ? customItems
+        : buildPool(PACKS, {
+            language: setup.language,
+            category: setup.category,
+            difficulty: setup.difficulty,
+          }),
     );
   }
 

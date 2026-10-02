@@ -2,11 +2,12 @@
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
-import { Button, Card, useToast } from '../../../shared/ui/index.ts';
+import { Button, Card, Spinner, useToast } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
 import { PACKS, CATEGORIES, LANGUAGES } from '../data/index.ts';
 import { buildPool } from '../logic/pool.ts';
+import { generateCustomWords } from '../logic/customCategory.ts';
 import type {
   CharadesCategory,
   CharadesDifficulty,
@@ -45,6 +46,16 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
     'all',
   );
   const [timerSecs, setTimerSecs] = useState<number>(60);
+
+  // AI custom category: free-text search → server generates fresh words.
+  const [customText, setCustomText] = useState<string>('');
+  const [generating, setGenerating] = useState<boolean>(false);
+  const [customResult, setCustomResult] = useState<{
+    category: string;
+    words: string[];
+  } | null>(null);
+
+  const clearCustom = (): void => setCustomResult(null);
 
   // LANGUAGES may be plain ids ('en') or { id, label } objects — accept both,
   // falling back to the languages actually present in PACKS.
@@ -93,6 +104,21 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
 
   const handleStart = (): void => {
     playSound('click');
+    if (customResult) {
+      track('custom_category_generated', {
+        category: customResult.category,
+        words: customResult.words.length,
+      });
+      onStart({
+        language: language as CharadesLang,
+        category,
+        difficulty,
+        timerSecs,
+        customCategory: customResult.category,
+        customWords: customResult.words,
+      });
+      return;
+    }
     const pool = buildPool(PACKS, {
       language: language as CharadesLang,
       category,
@@ -110,6 +136,33 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
       difficulty,
       timerSecs,
     });
+  };
+
+  const handleGenerate = async (): Promise<void> => {
+    const category = customText.trim();
+    if (category.length < 2 || generating) return;
+    playSound('click');
+    setGenerating(true);
+    try {
+      const result = await generateCustomWords({
+        category,
+        language: language as CharadesLang,
+        difficulty,
+      });
+      setCustomResult(result);
+      track('custom_category_generated', {
+        category: result.category,
+        words: result.words.length,
+      });
+    } catch (err) {
+      toast(
+        err instanceof Error && err.message
+          ? err.message
+          : t('charades.generationFailed'),
+      );
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const seg = (
@@ -149,6 +202,7 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
               aria-pressed={category === c.id}
               onClick={() => {
                 playSound('click');
+                clearCustom();
                 setCategory(c.id);
               }}
             >
@@ -157,6 +211,55 @@ export default function SetupPhase({ onStart }: SetupPhaseProps) {
             </button>
           ))}
         </div>
+      </Card>
+
+      <Card>
+        <span className="ch-section-label">{t('charades.customCategory')}</span>
+        <div className="ch-custom-row">
+          <input
+            className="ch-custom-input"
+            type="text"
+            value={customText}
+            maxLength={60}
+            placeholder={t('charades.customPlaceholder')}
+            aria-label={t('charades.customCategory')}
+            onChange={(e) => setCustomText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void handleGenerate();
+            }}
+          />
+          <Button
+            onClick={() => void handleGenerate()}
+            disabled={generating || customText.trim().length < 2}
+          >
+            ✨ {t('charades.generate')}
+          </Button>
+        </div>
+        {generating ? (
+          <div className="ch-generating" role="status">
+            <Spinner />
+            <span>{t('charades.generating')}</span>
+          </div>
+        ) : null}
+        {customResult && !generating ? (
+          <div className="ch-custom-chip">
+            <span>
+              ✨ “{customResult.category}” · {customResult.words.length}{' '}
+              {t('charades.words')}
+            </span>
+            <button
+              type="button"
+              className="ch-custom-clear"
+              aria-label={t('common.cancel')}
+              onClick={() => {
+                playSound('click');
+                clearCustom();
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
       </Card>
 
       <Card>
