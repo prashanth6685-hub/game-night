@@ -23,8 +23,14 @@ export const GENERATION_TIMEOUT_MS = 45000;
 export const RATE_LIMIT_PER_HOUR = 20;
 
 const POLLINATIONS_URL = 'https://text.pollinations.ai/';
-const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_URL_BASE =
+  'https://generativelanguage.googleapis.com/v1beta/models';
+/**
+ * Candidate models, newest-stable first. Google retires model names
+ * regularly (gemini-2.0-flash was discontinued in 2026) — trying the next
+ * name on a 404 keeps generation working without a code push.
+ */
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 
 const LANG_INSTRUCTIONS: Record<GenLanguage, string> = {
   en: 'English',
@@ -237,40 +243,48 @@ async function attemptGemini(
   apiKey: string,
   signal: AbortSignal,
 ): Promise<GeminiAttempt> {
-  try {
-    const res = await fetchImpl(GEMINI_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey,
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.9, maxOutputTokens: 1500 },
-      }),
-      signal,
-    });
-    if (!res.ok) {
-      const rejected = res.status === 400 || res.status === 403;
+  for (const model of GEMINI_MODELS) {
+    if (signal.aborted) break;
+    const url = `${GEMINI_URL_BASE}/${model}:generateContent`;
+    try {
+      const res = await fetchImpl(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.9, maxOutputTokens: 1500 },
+        }),
+        signal,
+      });
+      if (!res.ok) {
+        const rejected = res.status === 400 || res.status === 403;
+        console.error(
+          `[charades] gemini model=${model} status=${res.status}${rejected ? ' (key rejected)' : ''}`,
+        );
+        // A rejected key won't work on any model — stop immediately.
+        if (rejected) return { words: [], authRejected: true };
+        continue;
+      }
+      const data = JSON.parse(await res.text()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      const text =
+        data.candidates?.[0]?.content?.parts
+          ?.map((p) => p.text ?? '')
+          .join('') ?? '';
+      const words = sanitizeWords(text);
+      if (words.length > 0) return { words, authRejected: false };
+      // Model answered but produced nothing usable — try the next model.
+    } catch (err) {
       console.error(
-        `[charades] gemini status=${res.status}${rejected ? ' (key rejected)' : ''}`,
+        `[charades] gemini model=${model} error: ${err instanceof Error ? err.name : 'unknown'}`,
       );
-      return { words: [], authRejected: rejected };
     }
-    const data = JSON.parse(await res.text()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
-    };
-    const text =
-      data.candidates?.[0]?.content?.parts
-        ?.map((p) => p.text ?? '')
-        .join('') ?? '';
-    return { words: sanitizeWords(text), authRejected: false };
-  } catch (err) {
-    console.error(
-      `[charades] gemini error: ${err instanceof Error ? err.name : 'unknown'}`,
-    );
-    return { words: [], authRejected: false };
   }
+  return { words: [], authRejected: false };
 }
 
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
