@@ -337,11 +337,13 @@ test('generateWords falls back to Pollinations when Gemini fails', async () => {
       return { ok: true, status: 200, text: async () => '["Fallback"]' };
     };
     assert.deepEqual((await generateWords(baseInput, fetch)).words, ['Fallback']);
-    // Both Gemini models are tried before falling back to Pollinations.
+    // All three Gemini models are tried before falling back to Pollinations.
     assert.ok(urls[0]?.includes('googleapis.com'));
     assert.ok(urls[1]?.includes('googleapis.com'));
+    assert.ok(urls[2]?.includes('googleapis.com'));
     assert.notEqual(urls[0], urls[1]);
-    assert.ok(urls[2]?.includes('pollinations.ai'));
+    assert.notEqual(urls[1], urls[2]);
+    assert.ok(urls[3]?.includes('pollinations.ai'));
   } finally {
     if (prev === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = prev;
@@ -355,7 +357,7 @@ test('generateWords tries the next Gemini model on a 404', async () => {
     const urls: string[] = [];
     const fetch: FetchLike = async (url) => {
       urls.push(url);
-      if (url.includes('2.5-flash')) {
+      if (url.includes('3.6-flash')) {
         return { ok: false, status: 404, text: async () => 'not found' };
       }
       if (url.includes('googleapis.com')) {
@@ -376,7 +378,7 @@ test('generateWords tries the next Gemini model on a 404', async () => {
     assert.deepEqual(result.words, ['Alpha', 'Beta']);
     assert.equal(result.geminiRejected, false);
     assert.equal(urls.length, 2);
-    assert.ok(urls[0]?.includes('2.5-flash'));
+    assert.ok(urls[0]?.includes('3.6-flash'));
     assert.ok(urls[1]?.includes('3.5-flash'));
   } finally {
     if (prev === undefined) delete process.env.GEMINI_API_KEY;
