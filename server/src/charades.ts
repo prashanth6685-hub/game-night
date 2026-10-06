@@ -30,7 +30,7 @@ const GEMINI_URL_BASE =
  * regularly (gemini-2.0-flash was discontinued in 2026) — trying the next
  * name on a 404 keeps generation working without a code push.
  */
-const GEMINI_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash'];
 
 const LANG_INSTRUCTIONS: Record<GenLanguage, string> = {
   en: 'English',

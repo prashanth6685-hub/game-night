@@ -248,6 +248,26 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     });
   }
 
+  // Hooks must ALL run before any early return — otherwise pressing "Start
+  // game" changes the hook count between renders and React crashes (#310).
+  // Everything here is null-safe during the setup phase (game === null).
+  const current = game ? game.players[game.turn] : undefined;
+  const isBotTurn =
+    game !== null &&
+    current !== undefined &&
+    botIdx.has(game.turn) &&
+    game.winner === null;
+
+  // Computer players roll automatically after a short "thinking" pause.
+  // The effect re-fires after every move, so extra turns chain naturally.
+  const rollRef = useRef(handleRoll);
+  rollRef.current = handleRoll;
+  useEffect(() => {
+    if (!isBotTurn || rolling) return;
+    const id = window.setTimeout(() => rollRef.current(), 1100);
+    return () => window.clearTimeout(id);
+  }, [isBotTurn, rolling, game]);
+
   if (showMpLobby) {
     const hostName = (names[0] ?? '').trim() || (namePhs[0] ?? 'Player 1');
     return (
@@ -467,20 +487,6 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       </div>
     );
   }
-
-  const current = game.players[game.turn];
-  const isBotTurn =
-    current !== undefined && botIdx.has(game.turn) && game.winner === null;
-
-  // Computer players roll automatically after a short "thinking" pause.
-  // The effect re-fires after every move, so extra turns chain naturally.
-  const rollRef = useRef(handleRoll);
-  rollRef.current = handleRoll;
-  useEffect(() => {
-    if (!isBotTurn || rolling) return;
-    const id = window.setTimeout(() => rollRef.current(), 1100);
-    return () => window.clearTimeout(id);
-  }, [isBotTurn, rolling, game]);
 
   if (!current) return null;
   const turnText = fmt(t('snakeladder.turnOf'), {
