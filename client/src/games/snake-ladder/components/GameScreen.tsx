@@ -163,9 +163,8 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
     setMessage(null);
     setHighlight(null);
 
-    const iv = every(90, () => setDice(rollDice()));
+    // Show a spinning dice while rolling — no number faces until it settles.
     after(600, () => {
-      window.clearInterval(iv);
       const roll = rollDice();
       setDice(roll);
       const { state: next, event, extraTurn } = applyRoll(g, roll);
@@ -264,7 +263,12 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   rollRef.current = handleRoll;
   useEffect(() => {
     if (!isBotTurn || rolling) return;
-    const id = window.setTimeout(() => rollRef.current(), 1100);
+    // Breathing room: bots wait 3–6 seconds (random) before rolling, so
+    // other players' turns don't fly by in a blur.
+    const id = window.setTimeout(
+      () => rollRef.current(),
+      3000 + Math.random() * 3000,
+    );
     return () => window.clearTimeout(id);
   }, [isBotTurn, rolling, game]);
 
@@ -514,7 +518,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
           onClick={handleRoll}
           aria-label={`${t('snakeladder.rollDice')}: ${turnText}`}
         >
-          {DICE_FACES[dice - 1] ?? '⚄'}
+          {rolling ? '🎲' : (DICE_FACES[dice - 1] ?? '⚄')}
         </button>
       </div>
 

@@ -197,7 +197,7 @@ function MpPlay({ code, onFinish, onExit }: MpScreenProps) {
           onClick={() => void handleRoll()}
           aria-label={t('snakeladder.rollDice')}
         >
-          {DICE_FACES[(mpState.dice ?? 6) - 1] ?? '⚄'}
+          {rolling ? '🎲' : (DICE_FACES[(mpState.dice ?? 6) - 1] ?? '⚄')}
         </button>
       </div>
 

@@ -104,12 +104,12 @@
 }
 .sl-dice-rolling {
   display: inline-block;
-  animation: sl-shake 0.12s linear infinite;
+  animation: sl-spin 0.55s linear infinite;
 }
-@keyframes sl-shake {
-  0% { transform: rotate(-12deg) translateY(-2px); }
-  50% { transform: rotate(10deg) translateY(2px); }
-  100% { transform: rotate(-12deg) translateY(-2px); }
+@keyframes sl-spin {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.2); }
+  to { transform: rotate(360deg) scale(1); }
 }
 
 .sl-message {
