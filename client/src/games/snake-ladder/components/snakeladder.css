@@ -87,6 +87,21 @@
   font-size: 3.5rem;
   line-height: 1;
 }
+/* The dice is a tap target: tap it to roll (same action as the Roll button). */
+.sl-dice-btn {
+  background: none;
+  border: none;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.sl-dice-btn:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+.sl-dice-btn:not(:disabled):active {
+  transform: scale(0.92);
+}
 .sl-dice-rolling {
   display: inline-block;
   animation: sl-shake 0.12s linear infinite;

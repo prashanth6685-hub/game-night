@@ -489,9 +489,10 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
   }
 
   if (!current) return null;
-  const turnText = fmt(t('snakeladder.turnOf'), {
-    name: isBotTurn ? `🤖 ${current.name}` : current.name,
-  });
+  const turnText = isBotTurn
+    ? fmt(t('snakeladder.botThinking'), { name: current.name })
+    : fmt(t('snakeladder.yourRoll'), { name: current.name });
+  const canRoll = !rolling && game.winner === null && !isBotTurn;
 
   return (
     <div className="sl-wrap">
@@ -506,12 +507,15 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
       </div>
 
       <div className="sl-dice-row">
-        <span
-          className={`sl-dice${rolling ? ' sl-dice-rolling' : ''}`}
-          aria-hidden
+        <button
+          type="button"
+          className={`sl-dice sl-dice-btn${rolling ? ' sl-dice-rolling' : ''}`}
+          disabled={!canRoll}
+          onClick={handleRoll}
+          aria-label={`${t('snakeladder.rollDice')}: ${turnText}`}
         >
           {DICE_FACES[dice - 1] ?? '⚄'}
-        </span>
+        </button>
       </div>
 
       <div className="sl-message" aria-live="polite">
@@ -527,7 +531,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
         variant="primary"
         size="lg"
         fullWidth
-        disabled={rolling || game.winner !== null || isBotTurn}
+        disabled={!canRoll}
         onClick={handleRoll}
         ariaLabel={`${t('snakeladder.rollDice')}: ${turnText}`}
       >

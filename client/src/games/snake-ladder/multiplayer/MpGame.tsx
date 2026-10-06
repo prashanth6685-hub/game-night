@@ -173,8 +173,8 @@ function MpPlay({ code, onFinish, onExit }: MpScreenProps) {
     <div className="sl-wrap">
       <div className={`mp-turn-banner${isMyTurn ? ' mine' : ''}`}>
         {isMyTurn
-          ? `🎲 ${t('mp.yourTurn')}`
-          : fmt(t('snakeladder.turnOf'), { name: current?.name ?? '' })}
+          ? fmt(t('snakeladder.yourRoll'), { name: current?.name ?? '' })
+          : fmt(t('snakeladder.theirRoll'), { name: current?.name ?? '' })}
         {!room.connected && <span> · {t('mp.reconnecting')}</span>}
       </div>
 
@@ -182,15 +182,23 @@ function MpPlay({ code, onFinish, onExit }: MpScreenProps) {
         <div className="sl-turn">
           <Avatar name={current?.name ?? '?'} color={current?.color ?? '#888'} size={44} />
           <span className="sl-turn-text">
-            {fmt(t('snakeladder.turnOf'), { name: current?.name ?? '' })}
+            {isMyTurn
+              ? fmt(t('snakeladder.yourRoll'), { name: current?.name ?? '' })
+              : fmt(t('snakeladder.theirRoll'), { name: current?.name ?? '' })}
           </span>
         </div>
       </div>
 
       <div className="sl-dice-row">
-        <span className={`sl-dice${rolling ? ' sl-dice-rolling' : ''}`} aria-hidden>
+        <button
+          type="button"
+          className={`sl-dice sl-dice-btn${rolling ? ' sl-dice-rolling' : ''}`}
+          disabled={!isMyTurn || rolling}
+          onClick={() => void handleRoll()}
+          aria-label={t('snakeladder.rollDice')}
+        >
           {DICE_FACES[(mpState.dice ?? 6) - 1] ?? '⚄'}
-        </span>
+        </button>
       </div>
 
       <div className="sl-message" aria-live="polite">
