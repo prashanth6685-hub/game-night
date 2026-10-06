@@ -1,5 +1,58 @@
 /* Chess game styles — mobile-first, touch-friendly. */
 
+/* 💡 Hints toggle: shows/hides the suggested moves for the selected piece. */
+.chess-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: 2px 2px 8px;
+}
+
+.chess-hint-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 6px 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+}
+
+.chess-hint-toggle .toggle-pill {
+  width: 44px;
+  height: 25px;
+  border-radius: 999px;
+  background: #b9c2cc;
+  position: relative;
+  transition: background 0.2s ease;
+  flex: none;
+}
+
+.chess-hint-toggle .toggle-pill::after {
+  content: '';
+  position: absolute;
+  top: 2.5px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: left 0.2s ease;
+}
+
+.chess-hint-toggle.on .toggle-pill {
+  background: #2f9e44;
+}
+
+.chess-hint-toggle.on .toggle-pill::after {
+  left: 21px;
+}
+
 .chess-setup {
   display: flex;
   flex-direction: column;

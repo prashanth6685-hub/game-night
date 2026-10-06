@@ -1,1 +1,44 @@
-{"chess":{"blackName":"Black player name","blackToMove":"Black to move","cancel":"Cancel","captured":"Captured","check":"Check!","checkmate":"Checkmate","choosePromotion":"Choose a piece to promote to:","confirmNewGame":"Start a new game? The current game will be lost.","confirmResign":"{name}, are you sure you want to resign?","draw":"Draw","fiftyMove":"Fifty-move rule","flip":"Flip Board","gameDraw":"🤝 Draw","insufficient":"Insufficient material","moves":"Moves","mpYouAreWhite":"You play White — your friend joins as Black","newGame":"New Game","passAndPlay":"Pass & Play","player1":"Player 1","player2":"Player 2","promotion":"Promotion","resign":"Resign","result":"Result","setupTitle":"Chess Setup","stalemate":"Stalemate","startGame":"Start Game","threefold":"Threefold repetition","undo":"Undo","whiteName":"White player name","whiteToMove":"White to move","youWin":"🏆 {name} wins!"},"games":{"chess":{"desc":"Classic two-player chess with tap-to-move controls.","name":"Chess"}}}
+{
+  "chess": {
+    "blackName": "Black player name",
+    "blackToMove": "Black to move",
+    "cancel": "Cancel",
+    "captured": "Captured",
+    "check": "Check!",
+    "checkmate": "Checkmate",
+    "choosePromotion": "Choose a piece to promote to:",
+    "confirmNewGame": "Start a new game? The current game will be lost.",
+    "confirmResign": "{name}, are you sure you want to resign?",
+    "draw": "Draw",
+    "fiftyMove": "Fifty-move rule",
+    "flip": "Flip Board",
+    "gameDraw": "🤝 Draw",
+    "insufficient": "Insufficient material",
+    "moves": "Moves",
+    "mpYouAreWhite": "You play White — your friend joins as Black",
+    "newGame": "New Game",
+    "passAndPlay": "Pass & Play",
+    "player1": "Player 1",
+    "player2": "Player 2",
+    "promotion": "Promotion",
+    "resign": "Resign",
+    "result": "Result",
+    "setupTitle": "Chess Setup",
+    "stalemate": "Stalemate",
+    "startGame": "Start Game",
+    "threefold": "Threefold repetition",
+    "undo": "Undo",
+    "whiteName": "White player name",
+    "whiteToMove": "White to move",
+    "youWin": "🏆 {name} wins!",
+    "hints": "💡 Hints",
+    "hintsOn": "💡 Hints: on",
+    "hintsOff": "💡 Hints: off"
+  },
+  "games": {
+    "chess": {
+      "desc": "Classic two-player chess with tap-to-move controls.",
+      "name": "Chess"
+    }
+  }
+}

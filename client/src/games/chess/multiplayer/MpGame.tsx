@@ -79,6 +79,25 @@ function MpPlay({ code, onFinish, onExit }: MpScreenProps) {
   } | null>(null);
   const [resignOpen, setResignOpen] = useState(false);
   const [posting, setPosting] = useState(false);
+  // 💡 Hints toggle: when on, selecting a piece highlights every square it
+  // can legally move to. Remembered across games on this device.
+  const [hintsOn, setHintsOn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('chess-hints') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+  const toggleHints = (): void => {
+    setHintsOn((v) => {
+      try {
+        localStorage.setItem('chess-hints', v ? 'off' : 'on');
+      } catch {
+        // ignore
+      }
+      return !v;
+    });
+  };
   const finishedRef = useRef(false);
   const moveListRef = useRef<HTMLDivElement | null>(null);
 
@@ -330,11 +349,22 @@ function MpPlay({ code, onFinish, onExit }: MpScreenProps) {
         {!room.connected && <span> · {t('mp.reconnecting')}</span>}
       </div>
 
+      <div className="chess-toolbar">
+        <button
+          type="button"
+          className={`chess-hint-toggle${hintsOn ? ' on' : ''}`}
+          onClick={toggleHints}
+          aria-pressed={hintsOn}
+        >
+          <span className="toggle-pill" aria-hidden="true" />
+          {t(hintsOn ? 'chess.hintsOn' : 'chess.hintsOff')}
+        </button>
+      </div>
       <ChessBoard
         board={chess.board()}
         orientation={myColor}
         selected={selected}
-        targets={selected ? legalTargets(selected) : []}
+        targets={hintsOn && selected ? legalTargets(selected) : []}
         lastMove={lastMove}
         checkSquare={kingInCheckSquare()}
         disabled={!isMyTurn || posting || gameOver}
