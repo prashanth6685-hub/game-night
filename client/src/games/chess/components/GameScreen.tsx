@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import type { Color, Move, PieceSymbol, Square } from 'chess.js';
+import { glyphFor as glyphForPiece } from '../pieces.ts';
 import { useI18n } from '../../../i18n/index.ts';
 import type { GameResult, GameScreenProps } from '../../types.ts';
 import { Button, Card, Modal, ConfirmDialog } from '../../../shared/ui/index.ts';
@@ -31,22 +32,9 @@ const START_COUNT: Record<PieceSymbol, number> = {
 // Strongest-first display order for captured pieces.
 const CAPTURE_ORDER: PieceSymbol[] = ['q', 'r', 'b', 'n', 'p'];
 
-function glyphFor(color: Color, type: PieceSymbol): string {
-  const glyphs: Record<string, string> = {
-    wk: '♔',
-    wq: '♕',
-    wr: '♖',
-    wb: '♗',
-    wn: '♘',
-    wp: '♙',
-    bk: '♚',
-    bq: '♛',
-    br: '♜',
-    bb: '♝',
-    bn: '♞',
-    bp: '♟',
-  };
-  return glyphs[`${color}${type}`] ?? '';
+function glyphFor(_color: Color, type: PieceSymbol): string {
+  // Both colors share one glyph set — color only affects CSS styling.
+  return glyphForPiece(type);
 }
 
 export default function GameScreen({ onFinish }: GameScreenProps) {
@@ -506,7 +494,11 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
               onClick={() => choosePromotion(p)}
               aria-label={p}
             >
-              {pendingPromo && glyphFor(pendingPromo.color, p)}
+              {pendingPromo && (
+                <span className={`chess-piece piece-${pendingPromo.color}`}>
+                  {glyphFor(pendingPromo.color, p)}
+                </span>
+              )}
             </button>
           ))}
         </div>

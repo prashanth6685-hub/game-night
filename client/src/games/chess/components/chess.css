@@ -102,24 +102,40 @@
   box-shadow: inset 0 0 0 999px rgba(255, 70, 70, 0.55);
 }
 
+/* One shared glyph set for both colors — only the color treatment differs,
+   so white and black pieces are always the same size and shape. */
 .chess-piece {
   /* Fallback, then exactly ~70% of the square via container query units. */
   font-size: 34px;
   font-size: 70cqi;
   line-height: 1;
   pointer-events: none;
+  transition: transform 0.18s ease;
 }
 
+/* White pieces: bright fill with a crisp dark outline + soft depth shadow. */
 .chess-piece.piece-w {
-  color: #fafafa;
+  color: #fdfdfd;
+  -webkit-text-stroke: 0.055em #243044;
   text-shadow:
-    0 0 2px #222,
-    0 1px 2px rgba(0, 0, 0, 0.8);
+    0 1px 1px rgba(20, 28, 44, 0.55),
+    0 3px 5px rgba(20, 28, 44, 0.35);
 }
 
+/* Black pieces: deep fill with a hairline light edge so they stay crisp on
+   dark squares. Same glyph metrics as white — color is the only difference. */
 .chess-piece.piece-b {
-  color: #1a1a1a;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
+  color: #141a26;
+  -webkit-text-stroke: 0.045em rgba(240, 244, 250, 0.5);
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.5),
+    0 3px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* A selected piece lifts slightly off the square — modern tactile feel. */
+.chess-square.sq-selected .chess-piece {
+  transform: scale(1.14);
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
 }
 
 .chess-coord {
@@ -248,15 +264,19 @@
 }
 
 .cap-pieces .cap-glyph-w {
-  color: #fafafa;
+  color: #fdfdfd;
+  -webkit-text-stroke: 0.06em #243044;
   text-shadow:
-    0 0 2px #222,
-    0 1px 2px rgba(0, 0, 0, 0.8);
+    0 1px 1px rgba(20, 28, 44, 0.55),
+    0 2px 4px rgba(20, 28, 44, 0.3);
 }
 
 .cap-pieces .cap-glyph-b {
-  color: #1a1a1a;
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.35);
+  color: #141a26;
+  -webkit-text-stroke: 0.05em rgba(240, 244, 250, 0.5);
+  text-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .chess-moves {
@@ -317,4 +337,10 @@
 
 .chess-promo-btn:active {
   transform: scale(0.94);
+}
+
+/* Promotion choices reuse the board piece styling at dialog size. */
+.chess-promo-btn .chess-piece {
+  font-size: 2.6rem;
+  transform: none;
 }

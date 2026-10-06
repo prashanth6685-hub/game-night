@@ -2,6 +2,7 @@
 // All game state lives in the parent (GameScreen); this component only renders
 // squares, pieces, highlights and forwards taps.
 import type { Color, PieceSymbol, Square } from 'chess.js';
+import { PIECE_GLYPHS } from '../pieces.ts';
 
 export interface LegalTarget {
   to: string;
@@ -24,21 +25,6 @@ interface ChessBoardProps {
   disabled: boolean;
   onSquareTap: (square: string) => void;
 }
-
-const GLYPHS: Record<string, string> = {
-  wk: '♔',
-  wq: '♕',
-  wr: '♖',
-  wb: '♗',
-  wn: '♘',
-  wp: '♙',
-  bk: '♚',
-  bq: '♛',
-  br: '♜',
-  bb: '♝',
-  bn: '♞',
-  bp: '♟',
-};
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
@@ -113,7 +99,8 @@ export default function ChessBoard({
           ]
             .filter(Boolean)
             .join(' ');
-          const glyph = s.piece ? GLYPHS[`${s.piece.color}${s.piece.type}`] : null;
+          // Both colors share one glyph set — only the CSS class differs.
+          const glyph = s.piece ? PIECE_GLYPHS[s.piece.type] : null;
           return (
             <button
               key={s.square}
