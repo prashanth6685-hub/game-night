@@ -20,6 +20,7 @@ import bingoFrag from './fragments/bingo.en.json';
 import charadesFrag from './fragments/charades.en.json';
 import chessFrag from './fragments/chess.en.json';
 import ludoFrag from './fragments/ludo.en.json';
+import pokerFrag from './fragments/poker.en.json';
 import snakeladderFrag from './fragments/snakeladder.en.json';
 import tambolaFrag from './fragments/tambola.en.json';
 import uiFrag from './fragments/ui.en.json';
@@ -30,6 +31,7 @@ const fragmentDicts: Record<string, unknown>[] = [
   charadesFrag as Record<string, unknown>,
   chessFrag as Record<string, unknown>,
   ludoFrag as Record<string, unknown>,
+  pokerFrag as Record<string, unknown>,
   snakeladderFrag as Record<string, unknown>,
   tambolaFrag as Record<string, unknown>,
   uiFrag as Record<string, unknown>,

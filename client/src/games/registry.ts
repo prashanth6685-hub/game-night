@@ -8,6 +8,7 @@ import { meta as chessMeta } from './chess/meta.ts';
 import { meta as bingoMeta } from './bingo/meta.ts';
 import { meta as dumbCharadesMeta } from './dumb-charades/meta.ts';
 import { meta as ludoMeta } from './ludo/meta.ts';
+import { meta as pokerMeta } from './poker/meta.ts';
 
 export interface RegisteredGame {
   meta: GameMeta;
@@ -85,6 +86,7 @@ export const GAMES: RegisteredGame[] = [
     load: withRetry(() => import('./chess/index.ts')),
     loadMp: withRetry(() => import('./chess/multiplayer/MpGame.tsx')),
   },
+  { meta: pokerMeta, load: withRetry(() => import('./poker/index.ts')) },
 ];
 
 export function getGame(id: string): RegisteredGame | undefined {
