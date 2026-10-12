@@ -511,7 +511,8 @@
 @media (max-width: 640px) {
   .pk-actions {
     position: sticky;
-    bottom: 0;
+    /* Sit above the app's fixed bottom nav, not under it. */
+    bottom: calc(78px + env(safe-area-inset-bottom));
     z-index: 5;
     box-shadow: 0 -4px 16px rgba(20, 90, 60, 0.15);
   }
