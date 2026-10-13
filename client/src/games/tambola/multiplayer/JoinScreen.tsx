@@ -16,7 +16,7 @@ import { TambolaMp, openRoomEvents } from './api.ts';
 import type { MpClaimStatus, RoomResults } from './api.ts';
 import { PlayerTicket } from './PlayerTicket.tsx';
 import '../components/tambola.css';
-import { randomExampleName } from '../../../shared/names.ts';
+import { randomExampleName, examplePlaceholder } from '../../../shared/names.ts';
 
 function goHome(): void {
   window.location.hash = '#/';
@@ -307,7 +307,7 @@ export default function JoinScreen({ code }: { code: string }): JSX.Element {
             type="text"
             maxLength={24}
             autoComplete="nickname"
-            placeholder={namePh}
+            placeholder={examplePlaceholder(namePh)}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {

@@ -25,7 +25,7 @@ import {
 import type { LudoMove, LudoState } from '../logic/ludo.ts';
 import { chooseMove } from '../logic/bot.ts';
 import './ludo.css';
-import { randomExampleNames } from '../../../shared/names.ts';
+import { randomExampleNames, examplePlaceholder } from '../../../shared/names.ts';
 import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
 import { initialLudoMpState } from '../multiplayer/MpGame.tsx';
 
@@ -419,7 +419,7 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
                 <input
                   id="ludo-mp-name"
                   value={names[0] ?? ''}
-                  placeholder={namePhs[0] ?? ''}
+                  placeholder={examplePlaceholder(namePhs[0] ?? '')}
                   maxLength={20}
                   autoComplete="off"
                   aria-label={t('mp.yourName')}
@@ -450,7 +450,7 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
                   <input
                     id={`ludo-name-${i}`}
                     value={names[i] ?? ''}
-                    placeholder={namePhs[i] ?? ''}
+                    placeholder={examplePlaceholder(namePhs[i] ?? '')}
                     maxLength={20}
                     autoComplete="off"
                     aria-label={fmt(t('ludo.player'), { n: i + 1 })}

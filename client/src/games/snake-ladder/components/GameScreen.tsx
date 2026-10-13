@@ -17,7 +17,7 @@ import { BoardOverlay, squareCenterPct } from './BoardOverlay.tsx';
 import { applyRoll, createGame } from '../logic/game.ts';
 import type { SlPlayer, SlState } from '../logic/game.ts';
 import './snakeladder.css';
-import { randomExampleNames } from '../../../shared/names.ts';
+import { randomExampleNames, examplePlaceholder } from '../../../shared/names.ts';
 import { initialSlMpState } from '../logic/mpState.ts';
 
 // The multi-phone lobby (QR code, room polling) is only needed when the
@@ -348,7 +348,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                 <input
                   id="sl-name-0"
                   value={names[0] ?? ''}
-                  placeholder={namePhs[0] ?? ''}
+                  placeholder={examplePlaceholder(namePhs[0] ?? '')}
                   maxLength={20}
                   autoComplete="off"
                   onChange={(e) =>
@@ -368,7 +368,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                   <input
                     id="sl-name-0"
                     value={names[0] ?? ''}
-                    placeholder={namePhs[0] ?? ''}
+                    placeholder={examplePlaceholder(namePhs[0] ?? '')}
                     maxLength={20}
                     autoComplete="off"
                     onChange={(e) =>
@@ -418,7 +418,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                     <input
                       id={`sl-name-${i}`}
                       value={names[i] ?? ''}
-                      placeholder={namePhs[i] ?? ''}
+                      placeholder={examplePlaceholder(namePhs[i] ?? '')}
                       maxLength={20}
                       autoComplete="off"
                       onChange={(e) =>

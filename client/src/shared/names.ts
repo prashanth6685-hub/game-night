@@ -39,3 +39,12 @@ export function randomExampleNames(
   }
   return out;
 }
+
+/**
+ * Placeholder text that reads as an example, e.g. "e.g. Nani" — so users
+ * can tell it's a suggestion, not a pre-filled name.
+ */
+export function examplePlaceholder(name: string): string {
+  const trimmed = name.trim();
+  return trimmed === '' ? '' : `e.g. ${trimmed}`;
+}

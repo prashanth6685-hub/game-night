@@ -2,6 +2,7 @@ import { describe, test } from 'node:test';
 import assert from 'node:assert';
 import {
   EXAMPLE_NAMES,
+  examplePlaceholder,
   randomExampleName,
   randomExampleNames,
 } from './names.ts';
@@ -41,5 +42,15 @@ describe('randomExampleNames', () => {
 
   test('caps at the list size', () => {
     assert.equal(randomExampleNames(99).length, 6);
+  });
+});
+
+describe('examplePlaceholder', () => {
+  test('prefixes the name with e.g.', () => {
+    assert.strictEqual(examplePlaceholder('Nani'), 'e.g. Nani');
+  });
+  test('returns empty string for blank input', () => {
+    assert.strictEqual(examplePlaceholder(''), '');
+    assert.strictEqual(examplePlaceholder('   '), '');
   });
 });

@@ -8,10 +8,7 @@ import { useI18n } from '../../../i18n/index.ts';
 import { Avatar, Button, Card } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import {
-  randomExampleName,
-  randomExampleNames,
-} from '../../../shared/names.ts';
+import { randomExampleName, randomExampleNames, examplePlaceholder } from '../../../shared/names.ts';
 import {
   COLUMNS,
   FREE_COL,
@@ -327,7 +324,7 @@ export default function GameScreen({
             <input
               id="bg-name"
               value={playerName}
-              placeholder={namePh}
+              placeholder={examplePlaceholder(namePh)}
               maxLength={20}
               autoComplete="off"
               onChange={(e) => setPlayerName(e.target.value)}

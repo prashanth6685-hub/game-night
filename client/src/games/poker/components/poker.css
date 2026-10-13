@@ -1130,3 +1130,16 @@
     animation: none;
   }
 }
+
+/* Form controls must stay readable in both themes: theme background +
+   theme text — never a hardcoded white box with inherited light text
+   (which becomes invisible in dark mode). Range sliders excluded. */
+.pk-field input:not([type='range']):not([type='checkbox']):not([type='radio']),
+.pk-field select,
+.pk-field textarea,
+.pk-label + input,
+.pk-invite-row input,
+.pk-voice-field select {
+  background-color: var(--surface);
+  color: var(--text);
+}

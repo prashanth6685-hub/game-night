@@ -12,7 +12,7 @@ import { track } from '../../../shared/analytics.ts';
 import { getStatus, type ChessStatus } from '../logic/status.ts';
 import ChessBoard, { type LegalTarget } from './ChessBoard.tsx';
 import './chess.css';
-import { randomExampleName, randomExampleNames } from '../../../shared/names.ts';
+import { randomExampleName, randomExampleNames, examplePlaceholder } from '../../../shared/names.ts';
 import { MpLobby } from '../../../shared/mp/MpLobby.tsx';
 import { initialChessMpState } from '../multiplayer/MpGame.tsx';
 
@@ -333,7 +333,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                 <input
                   value={mpNameInput}
                   onChange={(e) => setMpNameInput(e.target.value)}
-                  placeholder={mpNamePh}
+                  placeholder={examplePlaceholder(mpNamePh)}
                   maxLength={24}
                   autoComplete="off"
                 />
@@ -349,7 +349,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                 <input
                   value={whiteNameInput}
                   onChange={(e) => setWhiteNameInput(e.target.value)}
-                  placeholder={namePhs[0] ?? ''}
+                  placeholder={examplePlaceholder(namePhs[0] ?? '')}
                   maxLength={24}
                   autoComplete="off"
                 />
@@ -359,7 +359,7 @@ export default function GameScreen({ onFinish }: GameScreenProps) {
                 <input
                   value={blackNameInput}
                   onChange={(e) => setBlackNameInput(e.target.value)}
-                  placeholder={namePhs[1] ?? ''}
+                  placeholder={examplePlaceholder(namePhs[1] ?? '')}
                   maxLength={24}
                   autoComplete="off"
                 />

@@ -73,7 +73,7 @@
   padding: 12px;
   border-radius: 10px;
   border: 1px solid var(--border, #ccc);
-  background: var(--input-bg, #fff);
+  background: var(--surface);
   color: inherit;
   min-height: 48px;
 }

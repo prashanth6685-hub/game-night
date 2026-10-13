@@ -13,7 +13,7 @@ import {
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import { randomExampleName } from '../../../shared/names.ts';
+import { randomExampleName, examplePlaceholder } from '../../../shared/names.ts';
 import { generateCustomWords } from '../logic/customCategory.ts';
 import type { CharadesDifficulty, CharadesLang } from '../data/types.ts';
 import type { CharadesSetup, CharadesTeams } from './GameScreen.tsx';
@@ -201,7 +201,7 @@ export default function SetupPhase({ onStart, onStartMulti }: SetupPhaseProps) {
                 type="text"
                 value={hostName}
                 maxLength={24}
-                placeholder={hostNamePh}
+                placeholder={examplePlaceholder(hostNamePh)}
                 aria-label={t('mp.yourName')}
                 autoComplete="off"
                 onChange={(e) => setHostName(e.target.value)}

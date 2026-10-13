@@ -8,7 +8,7 @@ import { GAMES } from '../../games/registry.ts';
 import { Button, Card, ErrorMessage, Spinner } from '../ui/index.ts';
 import { playSound } from '../sound.ts';
 import { track } from '../analytics.ts';
-import { randomExampleName } from '../names.ts';
+import { randomExampleName, examplePlaceholder } from '../names.ts';
 import { MpApi } from './api.ts';
 import type { MpRoomInfo } from './api.ts';
 import { getMpSession, saveMpSession } from './session.ts';
@@ -128,7 +128,7 @@ export function JoinGameScreen({ code }: { code: string }) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={namePh}
+            placeholder={examplePlaceholder(namePh)}
             maxLength={24}
             autoComplete="off"
             onKeyDown={(e) => {

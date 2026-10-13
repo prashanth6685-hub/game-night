@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import type { ITransport, Room } from './types.ts';
 import { RoomError } from './types.ts';
 import { InMemoryTransport } from './transports.ts';
-import { randomExampleName } from '../names.ts';
+import { randomExampleName, examplePlaceholder } from '../names.ts';
 import { GAMES } from '../../games/registry.ts';
 import { useI18n } from '../../i18n/index.ts';
 import {
@@ -79,7 +79,7 @@ export function CreateRoomScreen({ onCreated }: { onCreated: (code: string) => v
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={namePh}
+            placeholder={examplePlaceholder(namePh)}
             maxLength={24}
             autoComplete="off"
           />
@@ -142,7 +142,7 @@ export function JoinRoomScreen({ onJoined }: { onJoined: (code: string) => void 
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={namePh}
+            placeholder={examplePlaceholder(namePh)}
             maxLength={24}
             autoComplete="off"
           />
@@ -225,7 +225,7 @@ export function RoomLobbyScreen({ onStart }: { onStart: (room: Room) => void }) 
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder={newNamePh}
+              placeholder={examplePlaceholder(newNamePh)}
               maxLength={24}
               aria-label={t('rooms.yourName')}
             />

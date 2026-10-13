@@ -16,7 +16,7 @@ import {
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
 import { track } from '../../../shared/analytics.ts';
-import { randomExampleName, randomExampleNames } from '../../../shared/names.ts';
+import { randomExampleName, randomExampleNames, examplePlaceholder } from '../../../shared/names.ts';
 import {
   applyAction,
   createTable,
@@ -455,7 +455,7 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
               <input
                 id="pk-name"
                 value={name}
-                placeholder={namePh}
+                placeholder={examplePlaceholder(namePh)}
                 maxLength={20}
                 autoComplete="off"
                 onChange={(e) => setName(e.target.value)}

@@ -6,7 +6,7 @@ import { useI18n } from '../../../../i18n/index.ts';
 import { Avatar, Button, Card, Spinner } from '../../../../shared/ui/index.ts';
 import { playSound } from '../../../../shared/sound.ts';
 import { track } from '../../../../shared/analytics.ts';
-import { randomExampleName } from '../../../../shared/names.ts';
+import { randomExampleName, examplePlaceholder } from '../../../../shared/names.ts';
 import { PokerApiError, PokerRoomsApi, newIdem } from '../../logic/pokerRooms.ts';
 import type { PokerRoomSummary } from '../../logic/pokerRooms.ts';
 import type { PokerMpSession } from '../../logic/pokerSession.ts';
@@ -287,7 +287,7 @@ export function JoinRoomFlow({ initialCode, onJoined, onBack }: JoinRoomProps) {
                   value={name}
                   maxLength={20}
                   autoComplete="off"
-                  placeholder={namePh}
+                  placeholder={examplePlaceholder(namePh)}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>

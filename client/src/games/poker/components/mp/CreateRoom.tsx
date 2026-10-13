@@ -6,7 +6,7 @@ import { useI18n } from '../../../../i18n/index.ts';
 import { Button, Card, Spinner, useToast } from '../../../../shared/ui/index.ts';
 import { playSound } from '../../../../shared/sound.ts';
 import { track } from '../../../../shared/analytics.ts';
-import { randomExampleName } from '../../../../shared/names.ts';
+import { randomExampleName, examplePlaceholder } from '../../../../shared/names.ts';
 import { PokerRoomsApi } from '../../logic/pokerRooms.ts';
 import type {
   CreatedRoom,
@@ -245,7 +245,7 @@ export function CreateRoomForm({ initial, onCreated, onBack }: CreateRoomProps) 
               value={hostName}
               maxLength={20}
               autoComplete="off"
-              placeholder={namePh}
+              placeholder={examplePlaceholder(namePh)}
               onChange={(e) => setHostName(e.target.value)}
             />
           </div>
