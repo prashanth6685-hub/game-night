@@ -1,5 +1,5 @@
-// Tests for games/poker/logic/cards.ts
-// Run: node --test client/src/games/poker/logic/cards.test.ts (from repo root)
+// Tests for shared/poker/cards.ts
+// Run: node --test shared/poker/cards.test.ts (from repo root)
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {

@@ -1,5 +1,5 @@
-// Tests for games/poker/logic/handEval.ts
-// Run: node --test client/src/games/poker/logic/handEval.test.ts (from repo root)
+// Tests for shared/poker/handEval.ts
+// Run: node --test shared/poker/handEval.test.ts (from repo root)
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { compareHands, evaluate } from './handEval.ts';

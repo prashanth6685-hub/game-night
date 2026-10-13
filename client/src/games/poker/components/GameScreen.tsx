@@ -1,7 +1,7 @@
 // Poker Practice Mode — Texas Hold'em vs bots.
 // Setup phase (name, bot count, stack) then play phase (table + action
-// panel). All poker rules live in logic/engine.ts; this file is UI only.
-import { useEffect, useMemo, useRef, useState } from 'react';
+// panel). All poker rules live in shared/poker/engine.ts; this file is UI only.
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { GameScreenProps } from '../../types.ts';
 import { useI18n } from '../../../i18n/index.ts';
@@ -11,6 +11,7 @@ import {
   ConfirmDialog,
   GameHeader,
   Modal,
+  Spinner,
   useToast,
 } from '../../../shared/ui/index.ts';
 import { playSound } from '../../../shared/sound.ts';
@@ -23,17 +24,17 @@ import {
   potTotal,
   rebuy,
   startHand,
-} from '../logic/engine.ts';
+} from '../../../../../shared/poker/engine.ts';
 import type {
   LegalAction,
   PokerAction,
   PokerEvent,
   PokerState,
   PotResult,
-} from '../logic/engine.ts';
+} from '../../../../../shared/poker/engine.ts';
 import { chooseBotAction } from '../logic/bots.ts';
 import type { BotPersonality } from '../logic/bots.ts';
-import { cardName } from '../logic/cards.ts';
+import { cardName } from '../../../../../shared/poker/cards.ts';
 import { PokerTable } from './PokerTable.tsx';
 import { ActionPanel } from './ActionPanel.tsx';
 import './poker.css';
@@ -43,13 +44,15 @@ type Phase = 'setup' | 'play';
 const SMALL_BLIND = 5;
 const BIG_BLIND = 10;
 const STACKS = [500, 1000, 2000];
-const BOT_COUNTS = [2, 3, 4, 5];
+const BOT_COUNTS = [2, 3, 4, 5, 6, 7];
 const PERSONALITIES: readonly BotPersonality[] = [
   'conservative',
   'aggressive',
   'balanced',
   'beginner',
 ];
+const MultiplayerPoker = lazy(() => import('./MultiplayerPoker.tsx'));
+
 const RANK_ORDER = [
   'royal-flush',
   'straight-flush',
@@ -78,6 +81,7 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
 
   // ---- setup state ----
   const [phase, setPhase] = useState<Phase>('setup');
+  const [friendsMode, setFriendsMode] = useState(false);
   const [name, setName] = useState('');
   const [botCount, setBotCount] = useState(3);
   const [stack, setStack] = useState(1000);
@@ -426,6 +430,18 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
     </ul>
   );
 
+  // ---- friends (private multiplayer) mode ----
+  // Rendered instead of practice setup/play; practice state is untouched.
+  if (friendsMode) {
+    return (
+      <div className="pk-wrap">
+        <Suspense fallback={<Spinner />}>
+          <MultiplayerPoker onExit={() => setFriendsMode(false)} />
+        </Suspense>
+      </div>
+    );
+  }
+
   // ---- setup phase ----
   if (phase === 'setup' || !table) {
     return (
@@ -499,6 +515,17 @@ export default function GameScreen({ onFinish, onExit }: GameScreenProps) {
             </div>
             <Button variant="primary" size="lg" fullWidth onClick={startTable}>
               {t('poker.startGame')}
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              fullWidth
+              onClick={() => {
+                playSound('click');
+                setFriendsMode(true);
+              }}
+            >
+              {t('poker.mpPlayWithFriends')}
             </Button>
           </div>
         </Card>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useI18n } from '../../../i18n/index.ts';
 import { Button } from '../../../shared/ui/index.ts';
-import type { LegalAction, PokerAction } from '../logic/engine.ts';
+import type { LegalAction, PokerAction } from '../../../../../shared/poker/engine.ts';
 
 export interface ActionPanelProps {
   legal: LegalAction[];

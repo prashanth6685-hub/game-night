@@ -2,3 +2,5 @@ node_modules/
 dist/
 *.local
 .DS_Store
+# Poker report disk backup (player data) — memory is primary, this is backup.
+server/data/poker-reports.json

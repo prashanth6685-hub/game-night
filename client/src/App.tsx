@@ -24,6 +24,7 @@ const TambolaJoinScreen = lazy(
 const JoinGameScreen = lazy(
   () => import('./shared/mp/JoinGame.tsx').then((m) => ({ default: m.JoinGameScreen })),
 );
+const MultiplayerPoker = lazy(() => import('./games/poker/components/MultiplayerPoker.tsx'));
 
 export function nav(path: string): void {
   if (location.hash === `#${path}`) {
@@ -43,6 +44,8 @@ type Route =
   | { name: 'tambola-join'; code: string }
   | { name: 'join'; code: string }
   | { name: 'mp'; gameId: string; code: string }
+  | { name: 'poker' }
+  | { name: 'poker-join'; code: string }
   | { name: 'settings' }
   | { name: 'about' };
 
@@ -56,6 +59,12 @@ function parseRoute(): Route {
   }
   if (parts[0] === 'mp' && parts[1] && parts[2]) {
     return { name: 'mp', gameId: parts[1], code: parts[2].toUpperCase() };
+  }
+  if (parts[0] === 'poker' && parts[1] === 'join' && parts[2]) {
+    return { name: 'poker-join', code: parts[2].toUpperCase() };
+  }
+  if (parts[0] === 'poker') {
+    return { name: 'poker' };
   }
   if (parts[0] === 'game' && parts[1]) return { name: 'game', id: parts[1] };
   if (parts[0] === 'rooms' && parts[1] === 'new') return { name: 'rooms-new' };
@@ -464,6 +473,20 @@ export default function App() {
           </Suspense>
         )}
         {route.name === 'mp' && <MpGameRoute gameId={route.gameId} code={route.code} />}
+        {route.name === 'poker' && (
+          <Suspense fallback={<Spinner />}>
+            <GameErrorBoundary>
+              <MultiplayerPoker onExit={() => nav('/')} />
+            </GameErrorBoundary>
+          </Suspense>
+        )}
+        {route.name === 'poker-join' && (
+          <Suspense fallback={<Spinner />}>
+            <GameErrorBoundary>
+              <MultiplayerPoker initialCode={route.code} onExit={() => nav('/')} />
+            </GameErrorBoundary>
+          </Suspense>
+        )}
         {route.name === 'settings' && <SettingsPage />}
         {route.name === 'about' && <AboutPage />}
       </main>

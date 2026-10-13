@@ -3,10 +3,10 @@
 // (or bash scripts/run-tests.sh from the repo root)
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyAction, createTable, legalActions, potTotal, startHand } from './engine.ts';
-import type { LegalAction, PokerAction, PokerState, Street } from './engine.ts';
-import type { Card } from './cards.ts';
-import { makeDeck, shuffle } from './cards.ts';
+import { applyAction, createTable, legalActions, potTotal, startHand } from '../../../../../shared/poker/engine.ts';
+import type { LegalAction, PokerAction, PokerState, Street } from '../../../../../shared/poker/engine.ts';
+import type { Card } from '../../../../../shared/poker/cards.ts';
+import { makeDeck, shuffle } from '../../../../../shared/poker/cards.ts';
 import { chooseBotAction } from './bots.ts';
 import type { BotPersonality } from './bots.ts';
 

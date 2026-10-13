@@ -2,8 +2,8 @@
 // Pure CSS — no images. Face-up shows rank+suit in the top-left and
 // bottom-right (rotated) corners with a large center suit pip.
 import { useI18n } from '../../../i18n/index.ts';
-import type { Card } from '../logic/cards.ts';
-import { cardName, isRed, rankLabel, suitSymbol } from '../logic/cards.ts';
+import type { Card } from '../../../../../shared/poker/cards.ts';
+import { cardName, isRed, rankLabel, suitSymbol } from '../../../../../shared/poker/cards.ts';
 
 export interface PlayingCardProps {
   card?: Card;

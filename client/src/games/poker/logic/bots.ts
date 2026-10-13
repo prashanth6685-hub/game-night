@@ -7,10 +7,10 @@
 // another player's `hole` array. The implementation below only indexes
 // `hole` on the bot's own player object.
 
-import { evaluate } from './handEval.ts';
-import { legalActions, potTotal } from './engine.ts';
-import type { LegalAction, PokerAction, PokerState } from './engine.ts';
-import type { Card } from './cards.ts';
+import { evaluate } from '../../../../../shared/poker/handEval.ts';
+import { legalActions, potTotal } from '../../../../../shared/poker/engine.ts';
+import type { LegalAction, PokerAction, PokerState } from '../../../../../shared/poker/engine.ts';
+import type { Card } from '../../../../../shared/poker/cards.ts';
 
 export type BotPersonality = 'conservative' | 'aggressive' | 'balanced' | 'beginner';
 

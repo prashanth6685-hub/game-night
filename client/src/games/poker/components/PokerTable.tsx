@@ -2,9 +2,10 @@
 // and seats positioned around the ellipse (human seat 0 at bottom-center).
 import { useI18n } from '../../../i18n/index.ts';
 import { Avatar } from '../../../shared/ui/index.ts';
-import type { PokerState } from '../logic/engine.ts';
-import { potTotal } from '../logic/engine.ts';
+import type { PokerState } from '../../../../../shared/poker/engine.ts';
+import { potTotal } from '../../../../../shared/poker/engine.ts';
 import { PlayingCard } from './PlayingCard.tsx';
+import type { MicBadgeKind } from '../logic/mpAdapter.ts';
 
 export interface PokerTableProps {
   state: PokerState;
@@ -12,6 +13,11 @@ export interface PokerTableProps {
   bbSeat: number | null;
   thinkingSeat: number | null;
   rankName: (handName: string) => string;
+  /**
+   * Voice-chat mic badges by seat (rotated seats, my seat = 0 — same space
+   * as `state`). Optional: practice mode and other callers omit it.
+   */
+  micBadges?: Map<number, MicBadgeKind>;
 }
 
 function fmt(template: string, vars: Record<string, string | number>): string {
@@ -30,7 +36,14 @@ function seatPos(seat: number, count: number): { left: string; top: string } {
   return { left: `${x.toFixed(2)}%`, top: `${y.toFixed(2)}%` };
 }
 
-export function PokerTable({ state, sbSeat, bbSeat, thinkingSeat, rankName }: PokerTableProps) {
+export function PokerTable({
+  state,
+  sbSeat,
+  bbSeat,
+  thinkingSeat,
+  rankName,
+  micBadges,
+}: PokerTableProps) {
   const { t } = useI18n();
   const complete = state.street === 'complete';
   const total = potTotal(state);
@@ -41,8 +54,36 @@ export function PokerTable({ state, sbSeat, bbSeat, thinkingSeat, rankName }: Po
     for (const s of w.winnerSeats) winnerSeats.add(s);
   }
 
+  /** Accessible label for a seat's mic badge. */
+  function micBadgeLabel(kind: MicBadgeKind, name: string): string {
+    switch (kind) {
+      case 'speaking':
+        return fmt(t('poker.mpVoiceBadgeSpeaking'), { name });
+      case 'muted':
+        return fmt(t('poker.mpVoiceBadgeMuted'), { name });
+      case 'error':
+        return fmt(t('poker.mpVoiceBadgeError'), { name });
+      case 'on':
+      default:
+        return fmt(t('poker.mpVoiceBadgeOn'), { name });
+    }
+  }
+
+  function micBadgeIcon(kind: MicBadgeKind): string {
+    switch (kind) {
+      case 'muted':
+        return '🔇';
+      case 'error':
+        return '⚠️';
+      case 'speaking':
+      case 'on':
+      default:
+        return '🎙️';
+    }
+  }
+
   return (
-    <div className="pk-table-wrap">
+    <div className={`pk-table-wrap${n > 6 ? ' pk-many' : ''}`}>
       <div className="pk-felt" role="img" aria-label={t('poker.playTitle')}>
         {/* Pot + community cards, centered */}
         <div className="pk-center">
@@ -109,6 +150,20 @@ export function PokerTable({ state, sbSeat, bbSeat, thinkingSeat, rankName }: Po
                 )}
                 {p.seat === sbSeat && <span className="pk-badge pk-badge-blind">SB</span>}
                 {p.seat === bbSeat && <span className="pk-badge pk-badge-blind">BB</span>}
+                {(() => {
+                  const badge = micBadges?.get(p.seat);
+                  if (!badge) return null;
+                  return (
+                    <span
+                      className={`pk-mic-badge${badge === 'speaking' ? ' pk-mic-speaking' : ''}`}
+                      title={micBadgeLabel(badge, p.name)}
+                      aria-label={micBadgeLabel(badge, p.name)}
+                      role="img"
+                    >
+                      {micBadgeIcon(badge)}
+                    </span>
+                  );
+                })()}
               </div>
               <Avatar name={p.name} size={38} />
               <div className="pk-seat-name">

@@ -6,5 +6,5 @@ export const meta: GameMeta = {
   nameKey: 'games.poker.name',
   descKey: 'games.poker.desc',
   minPlayers: 2,
-  maxPlayers: 6,
+  maxPlayers: 8,
 };

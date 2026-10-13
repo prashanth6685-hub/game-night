@@ -29,6 +29,28 @@ import {
   mpStartHandler,
   mpStateHandler,
 } from './gameRooms.ts';
+import {
+  pokerActionHandler,
+  pokerCloseHandler,
+  pokerCreateRoomHandler,
+  pokerDisconnectHandler,
+  pokerEventsHandler,
+  pokerJoinHandler,
+  pokerPauseHandler,
+  pokerReadyHandler,
+  pokerReconnectHandler,
+  pokerRemoveHandler,
+  pokerReportHandler,
+  pokerResumeHandler,
+  pokerRebuyHandler,
+  pokerRoomInfoHandler,
+  pokerStartHandler,
+  pokerStateHandler,
+  pokerVoiceJoinHandler,
+  pokerVoiceLeaveHandler,
+  pokerVoiceSignalHandler,
+  pokerVoiceStatusHandler,
+} from './pokerRooms.ts';
 
 const PORT = Number(process.env.PORT ?? 10000);
 const VERSION = '1.0.0';
@@ -92,6 +114,29 @@ app.post('/api/mp/rooms/:code/start', mpStartHandler);
 app.post('/api/mp/rooms/:code/state', mpPostStateHandler);
 app.post('/api/mp/rooms/:code/intent', mpIntentHandler);
 app.post('/api/mp/rooms/:code/end', mpEndHandler);
+
+// Server-authoritative private poker rooms (virtual chips).
+app.post('/api/poker/rooms', pokerCreateRoomHandler);
+app.get('/api/poker/rooms/:code', pokerRoomInfoHandler);
+app.get('/api/poker/rooms/:code/state', pokerStateHandler);
+app.get('/api/poker/rooms/:code/events', pokerEventsHandler);
+app.get('/api/poker/rooms/:code/report', pokerReportHandler);
+app.post('/api/poker/rooms/:code/join', pokerJoinHandler);
+app.post('/api/poker/rooms/:code/ready', pokerReadyHandler);
+app.post('/api/poker/rooms/:code/start', pokerStartHandler);
+app.post('/api/poker/rooms/:code/action', pokerActionHandler);
+app.post('/api/poker/rooms/:code/rebuy', pokerRebuyHandler);
+app.post('/api/poker/rooms/:code/pause', pokerPauseHandler);
+app.post('/api/poker/rooms/:code/resume', pokerResumeHandler);
+app.post('/api/poker/rooms/:code/remove', pokerRemoveHandler);
+app.post('/api/poker/rooms/:code/disconnect', pokerDisconnectHandler);
+app.post('/api/poker/rooms/:code/reconnect', pokerReconnectHandler);
+app.post('/api/poker/rooms/:code/close', pokerCloseHandler);
+// Voice chat: WebRTC audio-only mesh; the server only relays signaling.
+app.post('/api/poker/rooms/:code/voice-join', pokerVoiceJoinHandler);
+app.post('/api/poker/rooms/:code/voice-leave', pokerVoiceLeaveHandler);
+app.post('/api/poker/rooms/:code/voice-status', pokerVoiceStatusHandler);
+app.post('/api/poker/rooms/:code/voice-signal', pokerVoiceSignalHandler);
 
 if (existsSync(STATIC_DIR)) {
   app.use(

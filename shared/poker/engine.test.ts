@@ -1,5 +1,5 @@
 // Tests for the Texas Hold'em engine (engine.ts).
-// Run: node --test client/src/games/poker/logic/engine.test.ts
+// Run: node --test shared/poker/engine.test.ts
 // (or bash scripts/run-tests.sh from the repo root)
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -149,8 +149,8 @@ describe('createTable', () => {
   });
 
   it('throws on invalid configs', () => {
-    assert.throws(() => table(['Solo']), /2-6/);
-    assert.throws(() => table(['a', 'b', 'c', 'd', 'e', 'f', 'g']), /2-6/);
+    assert.throws(() => table(['Solo']), /2-8/);
+    assert.throws(() => table(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']), /2-8/);
     assert.throws(
       () =>
         createTable({ names: ['a', 'b'], isBot: [true], startingStack: 100, smallBlind: 5, bigBlind: 10 }),
@@ -762,5 +762,121 @@ describe('pot reset after hand completion', () => {
       assert.equal(p.handCommitted, 0);
       assert.equal(p.bet, 0);
     }
+  });
+});
+
+describe('player count 2-8', () => {
+  const mk = (n: number): string[] => Array.from({ length: n }, (_, i) => `P${i + 1}`);
+
+  it('createTable accepts 2, 7 and 8 players', () => {
+    for (const n of [2, 7, 8]) {
+      const t = table(mk(n));
+      assert.equal(t.players.length, n);
+      assert.equal(t.street, 'complete');
+    }
+  });
+
+  it('startHand succeeds with 2, 7 and 8 players and deals 2 hole cards each', () => {
+    for (const n of [2, 7, 8]) {
+      const s = mustStart(table(mk(n))).state;
+      assert.equal(s.street, 'preflop');
+      for (const p of s.players) {
+        assert.equal(p.hole.length, 2);
+      }
+      assert.equal(s.deck.length, 52 - 2 * n);
+      assert.ok(s.actorSeat >= 0);
+      assert.ok(s.actorSeat < n);
+    }
+  });
+
+  it('rejects 9+ players with a clean thrown error', () => {
+    assert.throws(() => table(mk(9)), /poker: need 2-8 players/);
+    assert.throws(
+      () =>
+        createTable({
+          names: mk(9),
+          isBot: mk(9).map(() => false),
+          startingStack: 100,
+          smallBlind: 5,
+          bigBlind: 10,
+        }),
+      /poker: need 2-8 players/,
+    );
+  });
+
+  it('still rejects fewer than 2 players', () => {
+    assert.throws(() => table(mk(1)), /poker: need 2-8 players/);
+    assert.throws(
+      () =>
+        createTable({
+          names: [],
+          isBot: [],
+          startingStack: 100,
+          smallBlind: 5,
+          bigBlind: 10,
+        }),
+      /poker: need 2-8 players/,
+    );
+  });
+});
+
+describe('8-player hand', () => {
+  const mk8 = (): string[] => Array.from({ length: 8 }, (_, i) => `P${i + 1}`);
+
+  it('a full simulated 8-player hand completes with chips conserved', () => {
+    const done = finishHand(mustStart(table(mk8())).state);
+    assert.equal(done.street, 'complete');
+    assert.equal(potTotal(done), 0);
+    const total = done.players.reduce((sum, p) => sum + p.chips, 0);
+    assert.equal(total, 8 * 1000);
+    for (const p of done.players) {
+      assert.equal(p.handCommitted, 0);
+      assert.equal(p.bet, 0);
+      assert.ok(p.chips >= 0);
+    }
+  });
+
+  it('blinds land on the two seats left of the button', () => {
+    const s = mustStart(table(mk8())).state;
+    assert.equal(s.button, 0);
+    assert.equal(s.players[1]?.bet, 10); // SB
+    assert.equal(s.players[2]?.bet, 20); // BB
+    assert.equal(s.actorSeat, 3); // action starts left of the BB
+    assert.equal(s.toCall, 20);
+  });
+});
+
+describe('heads-up blind rules', () => {
+  it('button posts the small blind and acts first preflop', () => {
+    const s = mustStart(table(['Ann', 'Ben'])).state;
+    assert.equal(s.button, 0);
+    const sb = s.players[0];
+    const bb = s.players[1];
+    assert.equal(sb?.bet, 10);
+    assert.equal(bb?.bet, 20);
+    assert.equal(sb?.chips, 990);
+    assert.equal(bb?.chips, 980);
+    // Heads-up: the button/SB acts first preflop and can still call/raise.
+    assert.equal(s.actorSeat, 0);
+    assert.equal(s.toCall, 20);
+    const legal = legalActions(s, 0).map((a) => a.type);
+    assert.ok(legal.includes('call'));
+    assert.ok(legal.includes('raise'));
+  });
+
+  it('3-handed: SB is left of button, action starts left of the BB', () => {
+    const s = mustStart(table(['A', 'B', 'C'])).state;
+    assert.equal(s.button, 0);
+    assert.equal(s.players[1]?.bet, 10); // SB
+    assert.equal(s.players[2]?.bet, 20); // BB
+    assert.equal(s.actorSeat, 0); // wraps around left of BB
+  });
+
+  it('a full heads-up hand completes with chips conserved', () => {
+    const done = finishHand(mustStart(table(['Ann', 'Ben'])).state);
+    assert.equal(done.street, 'complete');
+    const total = done.players.reduce((sum, p) => sum + p.chips, 0);
+    assert.equal(total, 2 * 1000);
+    assert.equal(potTotal(done), 0);
   });
 });

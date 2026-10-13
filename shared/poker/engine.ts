@@ -189,8 +189,8 @@ function commitChips(p: PokerPlayerState, x: number): number {
 
 export function createTable(cfg: TableConfig): PokerState {
   const count = cfg.names.length;
-  if (!Number.isInteger(count) || count < 2 || count > 6) {
-    throw new Error(`poker: need 2-6 players, got ${count}`);
+  if (!Number.isInteger(count) || count < 2 || count > 8) {
+    throw new Error(`poker: need 2-8 players, got ${count}`);
   }
   if (cfg.isBot.length !== count) {
     throw new Error('poker: names and isBot must have the same length');
