@@ -28,7 +28,8 @@
     "save": "Save",
     "start": "Start",
     "yes": "Yes",
-    "retry": "Try again"
+    "retry": "Try again",
+    "skipToContent": "Skip to main content"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

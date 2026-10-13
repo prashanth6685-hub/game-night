@@ -433,7 +433,7 @@ export default function App() {
   return (
     <div className="gh-app">
       <a className="gh-skip" href="#main">
-        {t('common.loading')}
+        {t('common.skipToContent')}
       </a>
       <header className="gh-topbar">
         <span className="gh-logo" aria-hidden>
