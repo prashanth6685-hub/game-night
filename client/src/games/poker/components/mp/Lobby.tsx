@@ -14,7 +14,7 @@ import {
   Spinner,
   useToast,
 } from '../../../../shared/ui/index.ts';
-import { copyToClipboard } from '../../logic/share.ts';
+import { copyToClipboard, pokerJoinUrl } from '../../logic/share.ts';
 import { playSound } from '../../../../shared/sound.ts';
 import {
   PokerApiError,
@@ -273,6 +273,11 @@ export function Lobby({
     toast(ok ? t('poker.mpCopied') : t('poker.mpCopyFailed'), ok ? 'success' : 'error');
   }
 
+  async function copyInviteLink(): Promise<void> {
+    const ok = await copyToClipboard(pokerJoinUrl(session.code));
+    toast(ok ? t('poker.mpCopied') : t('poker.mpCopyFailed'), ok ? 'success' : 'error');
+  }
+
   if (!summary) {
     return (
       <div className="pk-wrap">
@@ -311,6 +316,9 @@ export function Lobby({
             </div>
             <Button variant="secondary" size="md" onClick={() => void copyCode()}>
               {t('poker.mpCopyCode')}
+            </Button>
+            <Button variant="secondary" size="md" onClick={() => void copyInviteLink()}>
+              {t('poker.mpCopyLink')}
             </Button>
           </div>
 

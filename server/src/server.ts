@@ -29,6 +29,7 @@ import {
   mpStartHandler,
   mpStateHandler,
 } from './gameRooms.ts';
+import { normalizeResolveCode, resolveRoomKind } from './roomResolve.ts';
 import {
   pokerActionHandler,
   pokerCloseHandler,
@@ -114,6 +115,18 @@ app.post('/api/mp/rooms/:code/start', mpStartHandler);
 app.post('/api/mp/rooms/:code/state', mpPostStateHandler);
 app.post('/api/mp/rooms/:code/intent', mpIntentHandler);
 app.post('/api/mp/rooms/:code/end', mpEndHandler);
+
+// Universal room-code resolver: one code works from any join screen.
+// Probes the poker, generic multi-phone, and tambola room stores and tells
+// the client which game the code belongs to (or 404 when unknown/expired).
+app.get('/api/rooms/resolve/:code', (req, res) => {
+  const raw = String(req.params.code ?? '');
+  if (!normalizeResolveCode(raw))
+    return res.status(400).json({ error: 'room code required' });
+  const resolved = resolveRoomKind(raw);
+  if (!resolved) return res.status(404).json({ error: 'room not found' });
+  return res.json(resolved);
+});
 
 // Server-authoritative private poker rooms (virtual chips).
 app.post('/api/poker/rooms', pokerCreateRoomHandler);

@@ -102,6 +102,11 @@ export function getMpRoom(code: string): GameRoom | undefined {
   return rooms.get(normalizeMpCode(code));
 }
 
+/** Test helper: drop every room immediately. */
+export function clearMpRooms(): void {
+  rooms.clear();
+}
+
 export function sweepMpRooms(now: number = Date.now()): number {
   let removed = 0;
   for (const [code, room] of rooms) {

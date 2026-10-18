@@ -8,6 +8,7 @@ import { playSound } from '../../../../shared/sound.ts';
 import { track } from '../../../../shared/analytics.ts';
 import { randomExampleName, examplePlaceholder } from '../../../../shared/names.ts';
 import { PokerApiError, PokerRoomsApi, newIdem } from '../../logic/pokerRooms.ts';
+import { goToResolvedRoom, resolveRoomCode } from '../../../../shared/rooms/resolveRoom.ts';
 import type { PokerRoomSummary } from '../../logic/pokerRooms.ts';
 import type { PokerMpSession } from '../../logic/pokerSession.ts';
 import { savePokerSession } from '../../logic/pokerSession.ts';
@@ -86,6 +87,13 @@ export function JoinRoomFlow({ initialCode, onJoined, onBack }: JoinRoomProps) {
       setStep('summary');
       playSound('click');
     } catch (e) {
+      // Not a poker room? It may belong to another game — resolve the code
+      // and send the player to that game's join screen instead of failing.
+      const resolved = await resolveRoomCode(c);
+      if (resolved && resolved.kind !== 'poker') {
+        goToResolvedRoom(resolved);
+        return;
+      }
       setError(
         e instanceof PokerApiError && e.status === 410
           ? t('poker.mpRoomClosed')

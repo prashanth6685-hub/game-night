@@ -17,6 +17,7 @@ import type { MpClaimStatus, RoomResults } from './api.ts';
 import { PlayerTicket } from './PlayerTicket.tsx';
 import '../components/tambola.css';
 import { randomExampleName, examplePlaceholder } from '../../../shared/names.ts';
+import { goToResolvedRoom, resolveRoomCode } from '../../../shared/rooms/resolveRoom.ts';
 
 function goHome(): void {
   window.location.hash = '#/';
@@ -109,8 +110,16 @@ export default function JoinScreen({ code }: { code: string }): JSX.Element {
           setPhase(info.status === 'ended' ? 'ended' : 'name');
         }
       })
-      .catch((e: Error) => {
+      .catch(async (e: Error) => {
         if (cancelled) return;
+        // Not a tambola room — maybe a poker or multi-phone code. Resolve it
+        // and bounce to that game's join screen instead of failing.
+        const resolved = await resolveRoomCode(code);
+        if (cancelled) return;
+        if (resolved) {
+          goToResolvedRoom(resolved);
+          return;
+        }
         setError(
           e.message.includes('room not found')
             ? t('tambola.roomNotFound')

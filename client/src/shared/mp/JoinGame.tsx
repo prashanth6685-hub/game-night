@@ -12,6 +12,7 @@ import { randomExampleName, examplePlaceholder } from '../names.ts';
 import { MpApi } from './api.ts';
 import type { MpRoomInfo } from './api.ts';
 import { getMpSession, saveMpSession } from './session.ts';
+import { goToResolvedRoom, resolveRoomCode } from '../rooms/resolveRoom.ts';
 import './mp.css';
 
 export function JoinGameScreen({ code }: { code: string }) {
@@ -39,8 +40,14 @@ export function JoinGameScreen({ code }: { code: string }) {
       .then((r) => {
         if (!cancelled) setInfo(r);
       })
-      .catch(() => {
-        if (!cancelled) setLoadError(t('mp.roomNotFound'));
+      .catch(async () => {
+        // Not a generic multi-phone room — maybe a poker or tambola code.
+        // Resolve it and bounce to that game's join screen instead of failing.
+        const resolved = await resolveRoomCode(upper);
+        if (!cancelled) {
+          if (resolved) goToResolvedRoom(resolved);
+          else setLoadError(t('mp.roomNotFound'));
+        }
       });
     return () => {
       cancelled = true;
